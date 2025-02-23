@@ -19,22 +19,37 @@ export class AddressService {
     : id}});
   }
 
-  findUserOneAddress(id: string, addressId: string) {
+  findOne(addressId: string) {
     return this.prisma.address.findUnique({where: {id: addressId}});
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} address`;
-  }
-
   update(id: string, updateAddressDto: UpdateAddressDto) {
-    return `This action updates a #${id} address`;
+    return this.prisma.address.update({
+      where:{
+        id:id
+      },data:{
+        ...updateAddressDto
+      }
+    })
   }
   setDefault(userId:string, id: string) {
-    return this.prisma.address.update({where: {id}, data: {isDefault: true}});
+    return this.prisma.address.update({
+      where:{
+        userId:userId,
+        id:id
+      },
+      data:{
+        isDefault:true
+      }
+    });
   }
 
-  remove(id: string) {
-    return  this.prisma.address.delete({where: {id}});
+  remove(userId:string, id: string) {
+    return  this.prisma.address.delete({
+      where:{
+        userId:userId,
+        id:id
+      }
+    });
   }
 }

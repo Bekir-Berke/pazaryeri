@@ -19,7 +19,7 @@ export class AuthService {
             if(!isMatch) {
                 throw new UnauthorizedException('Kullanıcı adı veya şifre hatalı');
             }
-            const payload = {sub: user.id};
+            const payload = {sub: user.id, role: user.role};
             return {
                 access_token: this.jwtService.sign({...payload, type: 'access'}, { expiresIn: '1d' }),
                 refresh_token: this.jwtService.sign({...payload, type: 'refresh'}, { expiresIn: '30d' }),
