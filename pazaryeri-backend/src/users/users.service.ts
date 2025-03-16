@@ -33,11 +33,14 @@ export class UsersService {
     return this.prisma.user.findUnique({where: {email}});
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
+  update(id: string, updateUserDto: UpdateUserDto) {
     return `This action updates a #${id} user`;
   }
 
   remove(id: string) {
     return this.prisma.user.delete({where: {id}});
+  }
+  getProfile(id: string) {
+    return this.prisma.user.findUnique({where: {id}});
   }
 }

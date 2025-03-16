@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,22 +8,23 @@ datasource db {
 }
 
 model User {
-  id           String        @id @default(uuid()) @db.Uuid
-  email        String        @unique
-  passwordHash String        @map("password_hash")
-  firstName    String?       @map("first_name")
-  lastName     String?       @map("last_name")
-  createdAt    DateTime      @default(now()) @map("created_at")
-  updatedAt    DateTime      @default(now()) @map("updated_at")
-  isActive     Boolean       @default(true) @map("is_active")
-  role         Role          @default(USER)
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  firstName    String?   @map("first_name")
+  lastName     String?   @map("last_name")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @default(now()) @map("updated_at")
+  isActive     Boolean   @default(true) @map("is_active")
+  role         Role      @default(USER)
   addresses    Address[]
+
   @@map("users")
 }
 
 model Address {
   id           String   @id @default(uuid()) @db.Uuid
-  userId       String   @db.Uuid @map("user_id")
+  userId       String   @map("user_id") @db.Uuid
   addressTitle String?  @map("address_title")
   fullName     String?  @map("full_name")
   phone        String?
@@ -40,11 +35,150 @@ model Address {
   isDefault    Boolean  @default(false) @map("is_default")
   createdAt    DateTime @default(now()) @map("created_at")
   user         User     @relation(fields: [userId], references: [id])
+
   @@map("addresses")
 }
 
+model Store {
+  id             String      @id @default(uuid()) @db.Uuid
+  email          String      @unique
+  password       String
+  name           String      @unique
+  ownerEmail     String      @map("owner_email")
+  ownerPhone     String      @map("owner_phone")
+  ownerFirstName String      @map("owner_first_name")
+  ownerLastName  String      @map("owner_last_name")
+  companyTypeId  Int         @map("company_type_id")
+  taxNumber      String      @unique
+  companyName    String?
+  taxOffice      String
+  iban           String
+  address        String
+  phone          String
+  status         StoreStatus @default(APPROVED)
+  createdAt      DateTime    @default(now())
+  products       Product[]
+  companyType    CompanyType @relation(fields: [companyTypeId], references: [id])
+
+  @@map("stores")
+}
+
+model CompanyType {
+  id      Int     @id @default(autoincrement())
+  name    String  @unique
+  taxRate Float   @map("tax_rate")
+  stores  Store[]
+
+  @@map("company_types")
+}
+
+model Product {
+  id          String             @id @default(uuid()) @db.Uuid
+  name        String
+  description String
+  brandId     String             @db.Uuid
+  price       Decimal            @db.Decimal(10, 2)
+  stock       Int                @default(0)
+  sku         String             @unique
+  barcode     String             @unique
+  weight      Float?
+  dimensions  String?
+  isActive    Boolean            @default(true)
+  isFeature   Boolean            @default(false)
+  imageUrl    String
+  storeId     String             @db.Uuid
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  attributes  ProductAttribute[]
+  categories  ProductCategory[]
+  images      ProductImage[]
+  variants    ProductVariant[]
+  brand       Brand              @relation(fields: [brandId], references: [id])
+  store       Store              @relation(fields: [storeId], references: [id])
+
+  @@map("products")
+}
+
+model ProductImage {
+  id        String   @id @default(uuid()) @db.Uuid
+  url       String
+  productId String   @db.Uuid
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+model Brand {
+  id       String    @id @default(uuid()) @db.Uuid
+  name     String
+  products Product[]
+
+  @@map("brands")
+}
+
+model ProductAttribute {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  value     String
+  productId String   @db.Uuid
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_attributes")
+}
+
+model ProductVariant {
+  id        String   @id @default(uuid()) @db.Uuid
+  sku       String?  @unique
+  name      String
+  price     Float?
+  stock     Int      @default(0)
+  imageUrl  String?
+  productId String   @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_variants")
+}
+
+model ProductCategory {
+  productId  String   @db.Uuid
+  categoryId String   @db.Uuid
+  createdAt  DateTime @default(now())
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId])
+  @@map("product_categories")
+}
+
+model Category {
+  id          String            @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  isActive    Boolean           @default(true)
+  parentId    String?           @db.Uuid
+  level       Int               @default(0)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  parent      Category?         @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[]        @relation("CategoryHierarchy")
+  products    ProductCategory[]
+
+  @@map("categories")
+}
+
+enum StoreStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
 enum Role {
-  USER 
+  USER
   STORE
   ADMIN
 }
