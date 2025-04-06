@@ -70,7 +70,8 @@ export class ProductService {
         }
       });
     } catch (error) {
-      throw new Error(error);
+      console.error('Error creating product:', error);
+      throw new Error(`Failed to create product: ${error.message}`);
     }
   }
 
@@ -93,7 +94,7 @@ export class ProductService {
       } = filters;
   
       // Build where conditions
-      const where: any = {};
+      const where: any = {isActive:true};
   
       if (search) {
         where.OR = [
@@ -210,10 +211,23 @@ export class ProductService {
         }),
         this.prisma.product.count({ where }),
       ]);
-  
-      // Return paginated result
+      
+      // Fiyat değerlerini number'a dönüştür
+      const transformedItems = items.map(item => {
+        return {
+          ...item,
+          price: item.price ? parseFloat(item.price.toString()) : null,
+          // Varyantların fiyatlarını da dönüştür
+          variants: item.variants ? item.variants.map(variant => ({
+            ...variant,
+            price: variant.price ? parseFloat(variant.price.toString()) : null
+          })) : []
+        };
+      });
+      
+      // Return paginated result with transformed prices
       return {
-        items,
+        items: transformedItems,
         meta: {
           total,
           page,
@@ -226,14 +240,22 @@ export class ProductService {
     }
   }
 
-  findOne(id: string) {
+  async findOne(id: string) {
     try {
-      return this.prisma.product.findUnique({
+      const product = await this.prisma.product.findUnique({
         where: { id },
         include: {
           images: true,
           attributes: true,
-          variants: true,
+          variants: {
+            select: {
+              id: true,
+              name: true,
+              sku: true,
+              price: true,
+              imageUrl: true,
+            },
+          },
           categories: {
             include: {
               category: true
@@ -247,6 +269,19 @@ export class ProductService {
           }
         }
       });
+      
+      if (!product) return null;
+      const { stock, ...productWithoutStock } = product;
+      // Fiyat değerlerini number'a dönüştür
+      return {
+        ...productWithoutStock,
+        price: product.price ? parseFloat(product.price.toString()) : null,
+        // Varyantların fiyatlarını da dönüştür
+        variants: product.variants ? product.variants.map(variant => ({
+          ...variant,
+          price: variant.price ? parseFloat(variant.price.toString()) : null
+        })) : []
+      };
     } catch (error) {
       throw new Error(error);
     }
@@ -264,11 +299,20 @@ export class ProductService {
     }
   }
 
-  remove(id: string) {
+  async remove(id: string) {
     try {
-      return this.prisma.product.delete({
-        where: { id }
+      const product = await this.prisma.product.findUnique({
+        where: { id },
+        include: {
+          images: true
+        }
       });
+      if(!product){
+        throw new Error('Product not found');
+      }else{
+        await this.uploadService.deleteFile(product.imageUrl);
+      }
+
     } catch (error) {
       throw new Error(error);
     }

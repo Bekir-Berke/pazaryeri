@@ -41,13 +41,6 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
-  @Patch(':id')
-  @UseGuards(PermissionsGuard)
-  @Permissions(Permission.UPDATE_ANY_USER)
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
-  }
-
   @Delete(':id')
   @UseGuards(PermissionsGuard)
   @Permissions(Permission.DELETE_ANY_USER)

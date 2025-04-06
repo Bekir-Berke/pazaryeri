@@ -10,6 +10,7 @@ import { StoreService } from 'src/store/store.service';
 import { RedisModule } from 'src/redis/redis.module';
 import { RedisService } from 'src/redis/redis.service';
 import { ConfigModule } from '@nestjs/config';
+import { CartService } from 'src/cart/cart.service';
 
 @Module({
   imports: [PrismaModule, UsersModule, JwtModule.register({
@@ -21,6 +22,6 @@ import { ConfigModule } from '@nestjs/config';
   ConfigModule
   ],
   controllers: [AuthController],
-  providers: [AuthService, UsersService, StoreService, RedisService],
+  providers: [AuthService, UsersService, StoreService, RedisService, CartService],
 })
 export class AuthModule {}

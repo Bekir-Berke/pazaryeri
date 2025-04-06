@@ -1,18 +1,31 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { AddressService } from './address.service';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
 import { IDGuard } from 'src/auth/id.guard';
 import { AuthGuard } from 'src/auth/auth.guard';
+import { Permissions } from 'src/auth/permissions.decorator';
+import { Permission } from 'src/auth/permissions.enum';
+import { PermissionsGuard } from 'src/auth/permissions.guard';
 
 @Controller('/address')
 export class AddressController {
   constructor(private readonly addressService: AddressService) {}
 
-  @Get('/user/:userId')
-  @UseGuards(AuthGuard,IDGuard)
-  findAll(@Param ('userId') userId:string) {
+  @Get('/user')
+  @UseGuards(AuthGuard,PermissionsGuard)
+  @Permissions(Permission.READ_ANY_ADDRESS)
+  findAll(@Req() req:Request) {
+    const userId = req['user'].sub;
     return this.addressService.findUserAllAddresses(userId);
+  }
+
+  @Post('/user')  
+  @UseGuards(AuthGuard,PermissionsGuard)
+  @Permissions(Permission.CREATE_ADDRESS)
+  create(@Body() createAddressDto: CreateAddressDto, @Req() req:Request) {
+    const id = req['user'].sub;
+    return this.addressService.create(id, createAddressDto);
   }
 
   @Get(':id')
@@ -21,27 +34,25 @@ export class AddressController {
     return this.addressService.findOne(id);
   }
 
-  @Post('/user/:userId')
-  @UseGuards(AuthGuard,IDGuard)
-  create(@Param('userId') id: string, @Body() createAddressDto: CreateAddressDto) {
-    return this.addressService.create(id, createAddressDto);
-  }
-
   @Patch(':id')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @Permissions(Permission.UPDATE_ANY_ADDRESS)
   update(@Param('id') id: string, @Body() updateAddressDto: UpdateAddressDto) {
     return this.addressService.update(id, updateAddressDto);
   }
 
   @Patch(':id/set-default')
-  @UseGuards(AuthGuard)
-  setDefault(@Param ('userId') userId:string, @Param('id') id: string) {
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @Permissions(Permission.UPDATE_ANY_ADDRESS)
+  setDefault(@Req() req:Request, @Param('id') id: string) {
+    const userId = req['user'].sub;
     return this.addressService.setDefault(userId, id);
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard)
-  remove(@Param ('userId') userId:string, @Param('id') id: string) {
+  remove(@Req() req:Request, @Param('id') id: string) {
+    const userId = req['user'].sub;
     return this.addressService.remove(userId, id);
   }
 }

@@ -18,6 +18,7 @@ model User {
   isActive     Boolean   @default(true) @map("is_active")
   role         Role      @default(USER)
   addresses    Address[]
+  cart         Cart?
 
   @@map("users")
 }
@@ -95,6 +96,7 @@ model Product {
   variants    ProductVariant[]
   brand       Brand              @relation(fields: [brandId], references: [id])
   store       Store              @relation(fields: [storeId], references: [id])
+  CartItem    CartItem[]
 
   @@map("products")
 }
@@ -139,7 +141,7 @@ model ProductVariant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
+  CartItem  CartItem[]
   @@map("product_variants")
 }
 
@@ -168,6 +170,33 @@ model Category {
   products    ProductCategory[]
 
   @@map("categories")
+}
+
+model Cart {
+  id        String     @id @default(uuid()) @db.Uuid
+  userId    String     @unique @db.Uuid
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  cartId    String   @db.Uuid
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String   @db.Uuid
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId String?  @db.Uuid
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  quantity  Int      @default(1)
+  price     Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+
+  @@map("cart_items")
+  @@unique([cartId, productId, variantId])
 }
 
 enum StoreStatus {

@@ -3,6 +3,7 @@ export enum Permission {
     READ_PROFILE = 'read:profile',
     UPDATE_PROFILE = 'update:profile',
     DELETE_PROFILE = 'delete:profile',
+    CREATE_ADDRESS= 'create:address',
     
     // Store permissions
     CREATE_PRODUCT = 'create:product',
@@ -28,11 +29,13 @@ export enum Permission {
     UPDATE_ANY_STORE = 'update:any_store',
     DELETE_ANY_STORE = 'delete:any_store',
 
+    CREATE_BRAND = 'create:brand',
     READ_ALL_BRANDS = 'read:all_brands',
     READ_ANY_BRAND = 'read:any_brand',
     UPDATE_ANY_BRAND = 'update:any_brand',
     DELETE_ANY_BRAND = 'delete:any_brand',
 
+    CREATE_CATEGORY = 'create:category',
     READ_ALL_CATEGORIES = 'read:all_categories',
     READ_ANY_CATEGORY = 'read:any_category',
     UPDATE_ANY_CATEGORY = 'update:any_category',

@@ -32,15 +32,24 @@ export class AddressService {
       }
     })
   }
-  setDefault(userId:string, id: string) {
-    return this.prisma.address.update({
-      where:{
-        userId:userId,
-        id:id
+  async setDefault(userId:string, id: string) {
+    await this.prisma.address.updateMany({
+      where: {
+        userId: userId,
+        isDefault: true,
       },
-      data:{
-        isDefault:true
-      }
+      data: {
+        isDefault: false,
+      },
+    });
+
+    return this.prisma.address.update({
+      where: {
+        id: id,
+      },
+      data: {
+        isDefault: true,
+      },
     });
   }
 

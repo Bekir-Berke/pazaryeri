@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { 
   IsString, 
   IsNumber, 
@@ -29,6 +29,7 @@ export class CreateProductDto {
 
   @IsNotEmpty({ message: 'Fiyat zorunludur' })
   @IsDecimal({ decimal_digits: '0,2' }, { message: 'Geçerli bir fiyat giriniz (ör: 99.99)' })
+  @Type(() => parseFloat)
   price: number; // Decimal türü için string olarak alıp Prisma'da dönüştüreceğiz
 
   @IsNotEmpty({ message: 'Marka ID zorunludur' })
@@ -37,6 +38,7 @@ export class CreateProductDto {
 
   @IsNotEmpty({ message: 'Stok miktarı zorunludur' })
   @IsNumber({}, { message: 'Geçerli bir stok miktarı giriniz' })
+  @Type(() => Number)
   stock: number;
 
   @IsNotEmpty({ message: 'SKU zorunludur' })
@@ -69,6 +71,7 @@ export class CreateProductDto {
 
   @IsNotEmpty({ message: 'Ana ürün görseli zorunludur' })
   @IsString()
+  @IsOptional()
   @Matches(/^https?:\/\/.*\.(jpeg|jpg|png|webp|gif)$/, { 
     message: "Geçerli bir görsel URL'i giriniz (http://... veya https://...)"
   })
@@ -82,17 +85,20 @@ export class CreateProductDto {
   @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => ProductAttributeDto)
+  @Transform(({ value }) => JSON.parse(value)) 
   attributes?: ProductAttributeDto[];
 
   @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => ProductVariantDto)
+  @Transform(({ value }) => JSON.parse(value)) 
   variants?: ProductVariantDto[];
 
   @IsNotEmpty({ message: 'En az bir kategori seçilmelidir' })
   @ArrayMinSize(1, { message: 'En az bir kategori seçilmelidir' })
   @ValidateNested({ each: true })
   @Type(() => ProductCategoryDto)
+  @Transform(({ value }) => JSON.parse(value)) 
   categories: ProductCategoryDto[];
   
   @IsNotEmpty({ message: 'Mağaza ID zorunludur' })

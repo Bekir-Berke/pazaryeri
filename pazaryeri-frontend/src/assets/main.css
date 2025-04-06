@@ -1,0 +1,118 @@
+#app{
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #2c3e50;
+  text-align: center;
+}
+a{
+  text-decoration: none;
+}
+li{
+  list-style-type: none;
+}
+.header{
+  background: #fff;
+  border-bottom: 1px solid #e1e7ec;
+}
+.header a{
+  color: #ffd300;
+  text-decoration: none;
+}
+.header h1{
+  color: #884dff;
+  text-decoration: none;
+}
+.header .input{
+  margin-top: 15px;
+}
+.header .input input{
+  width: 450px;
+  border: none;
+}
+.header .links ul{
+  margin-top: 15px;
+}
+.header .links ul li{
+  float: left;
+  margin-right: 10px;
+}
+.header .links ul li a{
+  color: #884dff;
+  text-decoration: none;
+}
+.header .links ul li button{
+  background: #884dff;
+  border: none;
+}
+.home{
+  background: #fff;
+  padding: 20px;
+  margin-top: 20px;
+}
+.cart{
+  background: #DCDCDC;
+  padding: 20px;
+  height: 500px;
+  overflow: auto;
+  width: auto;
+  margin-top: 38px;
+}
+.category{
+  margin-top: 38px;
+}
+.product{
+  margin-top: 38px;
+}
+.product:first{
+  margin-top: 0px;
+}
+.product img{
+  width: 50%;
+  height: auto;
+}
+.product-add{
+  margin-right: 10px;
+}
+.registerform{
+  max-width: 420px;
+  margin: 30px auto;
+  background: white;
+  text-align: left;
+  padding: 40px;
+  border-radius: 10px;
+}
+.registerform label{
+  color:#aaa;
+  display: inline-block;
+  margin: 25px 0 15px;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: bold;
+}
+.registerform input, select{
+  display: block;
+  padding: 10px 6px;
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  border-bottom: 1px solid #ddd;
+  color:#555;
+}
+.registerform button{
+  background: #0b6dff;
+  border: 0;
+  padding: 10px 20px;
+  margin-top: 20px;
+  color: white;
+  border-radius: 20px;
+}
+.dropdown .dropdown-menu .dropdown-item:last-child button{
+  background: #ffd300;
+  border: 0;
+  padding: 10px 20px;
+  margin-top: 20px;
+  color: white;
+  border-radius: 20px;
+}

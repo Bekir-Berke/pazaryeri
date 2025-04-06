@@ -7,6 +7,7 @@ import { StoreLoginDto } from './dto/store-login.dto';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { RedisService } from 'src/redis/redis.service';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -83,7 +84,7 @@ export class AuthService {
             if(!isMatch){
                 throw new UnauthorizedException('Kullanıcı adı veya şifre hatalı');
             }
-            const payload = {sub: store.id, role: 'store'};
+            const payload = {sub: store.id, role: 'STORE'};
             return {
                 access_token: this.jwtService.sign({...payload, type: 'access'}, {
                     expiresIn: '1d'
@@ -98,5 +99,51 @@ export class AuthService {
             }
             throw new BadRequestException('Bir hata oluştu');
         }
+    }
+    async logout(refreshToken: string) {
+        try {
+            const payload = this.jwtService.verify(refreshToken, { ignoreExpiration: true });
+            if (payload.type !== 'refresh') {
+                throw new UnauthorizedException('Geçersiz token');
+            }
+            const user = await this.usersService.findOne(payload.sub);
+            if (!user) {
+                throw new NotFoundException('Kullanıcı bulunamadı');
+            }
+            await this.redisService.delete(`refresh_token_${user.id}`);
+            return {
+                message: 'Başarıyla çıkış yapıldı'
+            };
+        } catch (error) {
+            console.log(error);
+            throw new BadRequestException('Bir hata oluştu');
+        }
+    }
+    async changePassword(userId, changePasswordDto:ChangePasswordDto){
+        try {
+            console.log(changePasswordDto);
+            const user = await this.usersService.findOne(userId);
+            if(!user){
+                throw new NotFoundException('Kullanıcı bulunamadı');
+            }
+            const isMatch = bcrypt.compareSync(changePasswordDto.oldPasswordHash, user.passwordHash);
+            if(!isMatch){
+                throw new UnauthorizedException('Eski şifre hatalı');
+            }
+            const salt = bcrypt.genSaltSync(10);
+            changePasswordDto.newPasswordHash = bcrypt.hashSync(changePasswordDto.newPasswordHash, salt);
+            await this.usersService.update(userId, {passwordHash: changePasswordDto.newPasswordHash});
+            return {
+                message: 'Şifre başarıyla değiştirildi'
+            };
+        } catch (error) {
+            if (error instanceof NotFoundException || error instanceof UnauthorizedException) {
+                throw error;
+            }
+            console.log(error);
+            throw new BadRequestException('Bir hata oluştu');
+            
+        }
+
     }
 }
