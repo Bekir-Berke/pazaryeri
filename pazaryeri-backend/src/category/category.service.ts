@@ -46,13 +46,32 @@ export class CategoryService {
     });
   }
 
-  findOne(id: string) {
-    return this.prisma.category.findUnique({
-      where: {id},
+  async findOne(id: string) {
+    let result:any = await this.prisma.category.findUnique({
+      where: { id },
       include:{
-        children:true
+        children:{
+          include:{
+            children:{
+              where:{
+                level:2
+              },
+              include:{
+                products:{
+                  include:{
+                    product:true
+                  }
+                }
+              }
+            }
+          }
+        }
       }
-    });
+    })
+    if(!result){
+      throw new Error('Category not found');
+    }
+    return result;
   }
 
   update(id: string, updateCategoryDto: UpdateCategoryDto) {

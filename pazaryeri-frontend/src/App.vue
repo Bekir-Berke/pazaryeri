@@ -7,16 +7,16 @@ import apiClient from "./api";
 const loginStore = useLoggedInStore();
 const cartStore = useCartStore();
 onMounted(() => {
-  if (localStorage.getItem("access_token") && localStorage.getItem("refresh_token")) {
-    loginStore.login()
-    apiClient.get('/cart',{headers: {Authorization: `Bearer ${localStorage.getItem("access_token")}`}})
-      .then((response) => {
-        cartStore.cart = response.data.items;
-      })
-      .catch((error) => {
-        console.error("Error fetching cart data:", error);
+  apiClient.get("/auth/me").then((response) => {
+    if (response.data) {
+      loginStore.login();
+      apiClient.get("/cart").then((response) => {
+        if (response.data) {
+          cartStore.initCart(response.data);
+        }
       });
-  }
+    }
+  });
 });
 </script>
 

@@ -14,7 +14,6 @@ export class CartService {
     });
   }
   async addToCart(userId: string, addToCartDto: addToCartDto) {
-    // Ürünü ve varyantlarını getir
     const product = await this.prisma.product.findUnique({
       where: {
         id: addToCartDto.productId,
@@ -28,7 +27,6 @@ export class CartService {
       throw new Error('Product not found');
     }
     
-    // Kullanıcının sepetini bul
     const cart = await this.prisma.cart.findUnique({
       where: {
         userId,
@@ -39,12 +37,10 @@ export class CartService {
       throw new Error('Cart not found');
     }
     
-    // Varyant kontrolü ve fiyat belirleme
     let price:any = product.price;
     let variantId = addToCartDto.variantId || null;
     
     if (variantId) {
-      // Verilen variant ID'sine sahip varyantı bul
       const variant = await this.prisma.productVariant.findUnique({
         where: {
           id: variantId,
@@ -56,33 +52,28 @@ export class CartService {
         throw new Error('Variant not found for this product');
       }
       
-      // Varyantın fiyatı varsa onu kullan, yoksa ürün fiyatını kullan
       if (variant.price !== null && variant.price !== undefined) {
         price = variant.price;
       }
       
-      // Varyant stok kontrolü
       if (variant.stock < addToCartDto.quantity) {
         throw new Error('Not enough stock for this variant');
       }
     } else {
-      // Ana ürün stok kontrolü
       if (product.stock < addToCartDto.quantity) {
         throw new Error('Not enough stock for this product');
       }
     }
-    
-    // Sepette bu ürün/varyant kombinasyonu var mı kontrol et - variantId'ye göre kesin eşleşme ara
+
     const existingCartItem = await this.prisma.cartItem.findFirst({
       where: {
         cartId: cart.id,
         productId: addToCartDto.productId,
-        variantId: variantId  // Tam eşleşme için null veya belirli bir ID olmalı
+        variantId: variantId
       }
     });
     
     if (existingCartItem) {
-      // Varolan sepet öğesini güncelle
       return this.prisma.cartItem.update({
         where: {
           id: existingCartItem.id
@@ -92,7 +83,6 @@ export class CartService {
         }
       });
     } else {
-      // Yeni sepet öğesi oluştur
       return this.prisma.cartItem.create({
         data: {
           cartId: cart.id,

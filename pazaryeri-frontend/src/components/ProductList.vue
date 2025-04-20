@@ -90,9 +90,8 @@
     const productDto = {
       productId: product.id,
       quantity: 1
-    }
-    apiClient.post('/cart',productDto,{headers: {Authorization: `Bearer ${localStorage.getItem('access_token')}`}}).then((response) => {
-        cartStore.addToCart(product);
+    };
+    apiClient.post('/cart',productDto).then((response) => {
         $toast.success(`${product.name} sepete eklendi`, { duration: 1000 });
     }).catch((error) => {
       console.error(error);
@@ -112,35 +111,39 @@
   
   <style scoped>
 .product-list-container {
-  padding: 20px 0;
+  padding: 15px 0;
+  background-color: #f8f8f8;
 }
 
-/* Ürün listesi görünümleri */
+/* Ürün listesi görünümleri - daha fazla ürün gösterimi için sıklaştırılmış */
 .products-container {
   display: grid;
-  gap: 15px;
-  grid-template-columns: repeat(5, 1fr); /* 5 sütun */
+  gap: 10px;
+  grid-template-columns: repeat(6, 1fr); /* 6 sütun - Trendyol stili */
 }
 
 /* Ürün kartı - Küçültülmüş */
 .product-card {
   background-color: white;
-  border-radius: 8px;
+  border-radius: 4px;
   overflow: hidden;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   transition: all 0.2s ease;
   position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .product-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
 }
 
 .product-badges {
   position: absolute;
-  top: 5px;
-  left: 5px;
+  top: 4px;
+  left: 4px;
   z-index: 2;
   display: flex;
   flex-direction: column;
@@ -148,10 +151,10 @@
 }
 
 .badge {
-  padding: 3px 6px;
-  border-radius: 3px;
-  font-size: 0.7rem;
-  font-weight: 500;
+  padding: 2px 4px;
+  border-radius: 2px;
+  font-size: 0.65rem;
+  font-weight: 600;
 }
 
 .new-badge {
@@ -167,7 +170,8 @@
 .product-image {
   position: relative;
   overflow: hidden;
-  padding-top: 100%; /* 1:1 aspect ratio */
+  padding-top: 130%; /* Daha uzun görünüm için aspect ratio artırıldı */
+  background-color: #f9f9f9;
 }
 
 .product-image img {
@@ -176,29 +180,33 @@
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
+  object-fit: contain; /* contain kullanarak ürünün tamamının görünmesini sağladık */
+  transition: transform 0.2s ease;
 }
 
 .product-card:hover .product-image img {
-  transform: scale(1.05);
+  transform: scale(1.03);
 }
 
 .product-info {
-  padding: 10px;
+  padding: 8px 8px 30px 8px; /* Alt kısımda sepete ekle butonu için yer açıldı */
   position: relative;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .product-title {
-  font-size: 0.85rem;
-  font-weight: 500;
-  margin-bottom: 8px;
-  line-height: 1.3;
-  height: 2.6rem;
+  font-size: 0.75rem;
+  font-weight: 400;
+  margin-bottom: 6px;
+  line-height: 1.2;
+  height: 2.4rem;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  color: #333;
 }
 
 .product-title a {
@@ -212,30 +220,29 @@
 
 .product-price {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 5px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  margin-top: auto;
 }
 
 .old-price {
   color: #999;
   text-decoration: line-through;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
+  margin-bottom: 2px;
 }
 
 .current-price {
-  color: #ff7f00;
-  font-size: 0.9rem;
+  color: #333;
+  font-size: 0.85rem;
   font-weight: 600;
 }
 
 .add-to-cart-btn {
   position: absolute;
-  right: 10px;
-  bottom: 10px;
-  width: 30px;
-  height: 30px;
+  right: 8px;
+  bottom: 8px;
+  width: 24px;
+  height: 24px;
   background-color: #ff7f00;
   color: white;
   border: none;
@@ -245,6 +252,7 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s;
+  font-size: 0.7rem;
 }
 
 .add-to-cart-btn:hover {
@@ -275,50 +283,45 @@
   margin-bottom: 15px;
 }
 
-/* Sayfalama */
-.pagination-container {
-  margin-top: 25px;
-  display: flex;
-  justify-content: center;
-}
-
-.pagination .page-link {
-  color: #666;
-  border-color: #e0e0e0;
-}
-
-.pagination .page-item.active .page-link {
-  background-color: #ff7f00;
-  border-color: #ff7f00;
-}
-
-/* Responsive tasarım */
+/* Responsive tasarım - Trendyol benzeri görünüm için güncellendi */
 @media (max-width: 1199px) {
   .products-container {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
   }
 }
 
 @media (max-width: 991px) {
   .products-container {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
 @media (max-width: 767px) {
   .products-container {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
   }
 }
 
 @media (max-width: 480px) {
   .products-container {
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    gap: 6px;
   }
   
   .product-title {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
+  }
+  
+  .product-info {
+    padding: 6px 6px 26px 6px;
+  }
+}
+
+@media (max-width: 360px) {
+  .products-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
   }
 }
 </style>

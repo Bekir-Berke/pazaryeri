@@ -9,22 +9,52 @@ import { Permissions } from 'src/auth/permissions.decorator';
 import { Permission } from 'src/auth/permissions.enum';
 import { PermissionsGuard } from 'src/auth/permissions.guard';
 import { AuthGuard } from 'src/auth/auth.guard';
+
 @Controller('product')
 export class ProductController {
-  constructor(private productService: ProductService, private uploadService:UploadService) {}
+  constructor(private productService: ProductService, private uploadService: UploadService) {}
+
   @Post()
   @UseGuards(AuthGuard, PermissionsGuard)
   @Permissions(Permission.CREATE_PRODUCT)
-  @UseInterceptors(FileInterceptor('product-image'))
+  @UseInterceptors(FilesInterceptor('product-image', 4))
   async create(
     @Req() req: Request,
     @Body() createProductDto: CreateProductDto, 
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFiles() files: Express.Multer.File[]
   ) {
-    createProductDto.storeId = req['user'].sub;
-    const imageUrl = await this.uploadService.uploadFile(file);
-    createProductDto.imageUrl = imageUrl;
-    return this.productService.create(createProductDto);
+    try {
+      createProductDto.storeId = req['user'].sub;
+      
+      // Resim yükleme işlemi
+      let imageUrls:any = [];
+      if (files && files.length > 0) {
+        for (const file of files) {
+          const imageUrl = await this.uploadService.uploadFile(file);
+          imageUrls.push({ url: imageUrl });
+        }
+      }
+      
+      // Ürün bilgilerine resim URL'lerini ekle
+      createProductDto.imageUrl = imageUrls[0]?.url || null; // Ana görsel
+      createProductDto.images = imageUrls;
+      
+      // Ürünü veritabanına kaydet
+      const product = await this.productService.create(createProductDto);
+      
+      return {
+        success: true,
+        message: 'Ürün başarıyla oluşturuldu',
+        data: product
+      };
+    } catch (error) {
+      console.error('Ürün oluşturma hatası:', error);
+      return {
+        success: false,
+        message: 'Ürün oluşturulurken bir hata oluştu',
+        error: error.message
+      };
+    }
   }
 
   @Get()
@@ -42,6 +72,7 @@ export class ProductController {
   @Permissions(Permission.UPDATE_PRODUCT)
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto, @Req() req: Request) {
     updateProductDto.storeId = req['user'].sub;
+    console.log('updateProductDto', updateProductDto);
     return this.productService.update(id, updateProductDto);
   }
 

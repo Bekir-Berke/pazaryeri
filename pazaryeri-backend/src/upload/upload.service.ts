@@ -46,8 +46,8 @@ export class UploadService {
       };
   
       await this.s3Client.send(new PutObjectCommand(uploadParams));
-  
-      return `https://pub-${this.accountId}.r2.dev/${fileName}`;
+      const fileResult = `https://pub-${this.accountId}.r2.dev/${fileName}`
+      return fileResult;
     }
     async deleteFile(fileUrl: string): Promise<void> {
       const fileKey = fileUrl.replace(`${process.env.CLOUDFLARE_R2_ENDPOINT}/${this.bucket}/`, '');

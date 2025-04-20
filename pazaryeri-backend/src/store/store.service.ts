@@ -6,35 +6,153 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class StoreService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
   create(createStoreDto: CreateStoreDto) {
     createStoreDto.password = bcrypt.hashSync(createStoreDto.password, 10);
-    return this.prisma.store.create({data: createStoreDto});
+    return this.prisma.store.create({ data: { ...createStoreDto, status: 'APPROVED' } });
   }
   findAll() {
-    return this.prisma.store.findMany({include:{companyType:true, products:true}});
+    return this.prisma.store.findMany({ include: { companyType: true, products: true } });
   }
 
-  findOne(id: string) {
-    return this.prisma.store.findUnique({where: {id}, include:{companyType:true, products:true}});
+  async findOne(id: string) {
+    const store =  await this.prisma.store.findUnique(
+      {
+        where: { id },
+        select: {
+          id: true,
+          address: true,
+          email: true,
+          iban: true,
+          ownerFirstName: true,
+          ownerLastName: true,
+          ownerEmail: true,
+          ownerPhone: true,
+          phone: true,
+          taxNumber: true,
+          taxOffice: true,
+          companyName: true,
+          companyType: {
+            select: {
+              id: true,
+              name: true,
+              taxRate: true,
+            }
+          },
+          products: {
+            include: {
+              brand: true,
+              attributes: true,
+              images: true,
+              variants: true,
+              categories: true
+            }
+          },
+        }
+      }
+    )
+    const orders = await this.findStoreOrders(id);
+    return { ...store, orders };
   }
 
-  findStoreProducts(id: string){
-    return this.prisma.product.findMany({where: {storeId: id}});
+  findStoreProducts(id: string) {
+    return this.prisma.product.findMany({ where: { storeId: id } });
+  }
+
+  findOneByEmail(email: string) {
+    return this.prisma.store.findUnique({ where: { email } });
   }
   
-  findOneByEmail(email: string) {
-    return this.prisma.store.findUnique({where: {email}});
+  findStoreProfile(id: string) {
+    return this.prisma.store.findUnique({
+      where: {id},
+      select:{
+        id: true,
+        address: true,
+        name:true,
+        email: true,
+        phone: true,
+        products:{
+          where:{
+            isActive:true,
+          },
+          select:{
+            id:true,
+            name:true,
+            price:true,
+            imageUrl:true
+          }
+        }
+      }
+    })
   }
 
   update(id: string, updateStoreDto: UpdateStoreDto) {
-    if(updateStoreDto.password){
+    if (updateStoreDto.password) {
       updateStoreDto.password = bcrypt.hashSync(updateStoreDto.password, 10);
     }
-    return this.prisma.store.update({where: {id}, data: updateStoreDto});
+    return this.prisma.store.update({ where: { id }, data: updateStoreDto });
   }
 
   remove(id: string) {
-    return this.prisma.store.delete({where: {id}});
+    return this.prisma.store.delete({ where: { id } });
+  }
+
+  async findStoreOrders(storeId: string) {
+    return this.prisma.order.findMany({
+      where: {
+        items: {
+          some: {
+            product: {
+              storeId
+            }
+          }
+        }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          }
+        },
+        address: {
+          select: {
+            id: true,
+            city: true,
+            district: true,
+            neighborhood: true,
+            fullAddress: true
+          }
+        },
+        items: {
+          include: {
+            product: {
+              include: {
+                store: {
+                  select: {
+                    id: true,
+                    companyName: true
+                  }
+                },
+                variants: true,
+                images: true
+              }
+            },
+            variant: true
+          },
+          where: {
+            product: {
+              storeId
+            }
+          }
+        },
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
   }
 }

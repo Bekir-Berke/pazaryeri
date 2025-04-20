@@ -4,6 +4,16 @@ export enum Permission {
     UPDATE_PROFILE = 'update:profile',
     DELETE_PROFILE = 'delete:profile',
     CREATE_ADDRESS= 'create:address',
+
+    CREATE_CARD = 'create:card',
+    READ_CARD = 'read:card',
+    UPDATE_CARD = 'update:card',
+    DELETE_CARD = 'delete:card',
+
+    CREATE_ORDER = 'create:order',
+    READ_ORDER = 'read:order',
+    UPDATE_ORDER = 'update:order',
+    DELETE_ORDER = 'delete:order',
     
     // Store permissions
     CREATE_PRODUCT = 'create:product',

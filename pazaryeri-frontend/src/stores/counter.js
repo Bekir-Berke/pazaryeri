@@ -1,15 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import apiClient from '@/api'
-export const useCounterStore = defineStore('counter', () => {
-  const count = ref(0)
-  const doubleCount = computed(() => count.value * 2)
-  function increment() {
-    count.value++
-  }
-
-  return { count, doubleCount, increment }
-})
 
 export const useProductStore = defineStore('products', () => {
   const products = ref([]);
@@ -43,25 +34,71 @@ export const useLoggedInStore = defineStore('loggedIn', () => {
 })
 export const useCartStore = defineStore('cart', () => {
   const cart = ref([]);
-  function addToCart(item) {
-    let product = cart.value.find(p => p.id === item.id);
-    if(product){
-      product.quantity++;
-    }else{
-      cart.value.push({...item, quantity: 1})
+
+  // Initialize cart with data from API
+  function initCart(cartData) {
+    if (cartData && cartData.items) {
+      cart.value = cartData.items;
     }
   }
-  function decreaseQuantity(item) {
-    let product = cart.value.find(p => p.id === item.id);
-    if(product){
-      product.quantity--;
-      if(product.quantity === 0){
-        cart.value = cart.value.filter(p => p.id !== item.id);
+  
+  function addToCart(item) {
+    const productId = item.productId || item.id;
+    const variantId = item.variantId || (item.variant ? item.variant.id : null);
+    
+    let cartItem = cart.value.find(p => 
+      p.productId === productId && 
+      ((variantId && p.variantId === variantId) || (!variantId && !p.variantId))
+    );
+    
+    if (cartItem) {
+      cartItem.quantity++;
+    } else {
+      if (!item.productId) {
+        cart.value.push({
+          productId: item.id,
+          variantId: item.variant ? item.variant.id : null,
+          quantity: 1,
+          price: item.price,
+          product: item,
+          variant: item.variant || null
+        });
+      } else {
+        cart.value.push({ ...item, quantity: 1 });
       }
     }
   }
-  function removeFromCart(item) {
-    cart.value = cart.value.filter(p => p.id !== item.id);
+  
+  function decreaseQuantity(item) {
+    const productId = item.productId || item.id;
+    const variantId = item.variantId || (item.variant ? item.variant.id : null);
+    
+    let cartItem = cart.value.find(p => 
+      p.productId === productId && 
+      ((variantId && p.variantId === variantId) || (!variantId && !p.variantId))
+    );
+    
+    if (cartItem) {
+      cartItem.quantity--;
+      if (cartItem.quantity <= 0) {
+        removeFromCart(item);
+      }
+    }
   }
-  return { cart, addToCart, decreaseQuantity, removeFromCart }
+  
+  function removeFromCart(item) {
+    const productId = item.productId || item.id;
+    const variantId = item.variantId || (item.variant ? item.variant.id : null);
+    
+    cart.value = cart.value.filter(p => 
+      !(p.productId === productId && 
+        ((variantId && p.variantId === variantId) || (!variantId && !p.variantId)))
+    );
+  }
+
+  function clearCart(){
+    cart.value = []
+  }
+
+  return { cart, addToCart, decreaseQuantity, removeFromCart, initCart, clearCart }
 })

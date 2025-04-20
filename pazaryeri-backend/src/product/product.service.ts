@@ -93,7 +93,6 @@ export class ProductService {
         sortOrder = 'desc'
       } = filters;
   
-      // Build where conditions
       const where: any = {isActive:true};
   
       if (search) {
@@ -288,6 +287,7 @@ export class ProductService {
   }
 
   update(id: string, updateProductDto: UpdateProductDto) {
+    console.log('updateProductDto', updateProductDto);
     try {
       return this.prisma.product.update({
         where: { id },
@@ -311,6 +311,12 @@ export class ProductService {
         throw new Error('Product not found');
       }else{
         await this.uploadService.deleteFile(product.imageUrl);
+        for (const image of product.images) {
+          await this.uploadService.deleteFile(image.url);
+        }
+        return this.prisma.product.delete({
+          where: { id }
+        })
       }
 
     } catch (error) {

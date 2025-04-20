@@ -110,4 +110,19 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   getClient(): Redis {
     return this.redisClient;
   }
+
+  async generateOrderNumber() {
+    const today = new Date().toISOString().split('T')[0].replace(/-/g, '') // Örn: 20250416
+    const redisKey = `order:count:${today}`
+
+    const count = await this.redisClient.incr(redisKey)
+
+    // Redis anahtarını 1 gün sonra sıfırlamak için TTL ayarı (eğer ilk kez oluşturuluyorsa)
+    const ttl = await this.redisClient.ttl(redisKey)
+    if (ttl === -1) {
+      await this.redisClient.expire(redisKey, 60 * 60 * 24) // 24 saat
+    }
+
+    return `${today}-${String(count).padStart(4, '4')}`
+  }
 }

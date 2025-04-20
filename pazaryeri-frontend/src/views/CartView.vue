@@ -14,7 +14,7 @@
         <div class="cart-item" v-for="item in cartStore.cart" :key="item.id">
           <div class="item-image">
             <!-- Varyant varsa varyant resmini, yoksa ürün resmini göster -->
-            <img :src="item.variant ? item.variant.imageUrl : item.product.imageUrl" alt="Ürün görseli" />
+            <img :src="item.variant && item.variant.imageUrl ? item.variant.imageUrl : (item.product && item.product.imageUrl ? item.product.imageUrl : '')" alt="Ürün görseli" />
           </div>
           <div class="item-details">
             <router-link
@@ -27,7 +27,7 @@
             </router-link>
             <p class="item-seller">
               Satıcı:
-              <span class="seller-name">{{ item.product.store.name }}</span>
+              <span class="seller-name">{{ item.product && item.product.store ? item.product.store.name : 'Bilinmeyen' }}</span>
             </p>
           </div>
           <div class="item-quantity">
@@ -68,9 +68,11 @@
             <span>Toplam</span>
             <span>{{ formatPrice(totalPrice) }}</span>
           </div>
-          <button class="checkout-btn">
-            <i class="bi bi-lock"></i> Siparişi Tamamla
-          </button>
+          <router-link to="/checkout">
+            <button class="checkout-btn">
+              <i class="bi bi-lock"></i> Siparişi Tamamla
+            </button>
+          </router-link>
           <div class="secure-payment">
             <i class="bi bi-shield-check"></i> Güvenli Ödeme
           </div>
@@ -145,8 +147,7 @@ const deleteFromCart = (item) => {
     variantId: item.variant ? item.variant.id : null,
   };
   apiClient.delete(`/cart`, {
-    data: deleteData, 
-    headers: {Authorization: `Bearer ${localStorage.getItem("access_token")}`}
+    data: deleteData
   })
     .then(() => {
       cartStore.removeFromCart(item);
@@ -174,10 +175,8 @@ const increaseQuantity = (item) => {
   }
   
   apiClient.post(`/cart`, productDto, { 
-    headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` } 
   })
     .then(() => {
-      cartStore.addToCart(item);
       toast.success("Ürün sepetinize eklendi");
     })
     .catch((error) => {
@@ -199,7 +198,6 @@ const decreaseQuantity = (item) => {
     }
     
     apiClient.post(`/cart`, productDto, { 
-      headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` } 
     })
       .then(() => {
         cartStore.decreaseQuantity(item);
@@ -212,21 +210,27 @@ const decreaseQuantity = (item) => {
   }
 };
 
-onMounted(()  => {
-  apiClient.get('/cart', { headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` } })
+onMounted(() => {
+  isLoading.value = true;
+  apiClient.get("/cart")
     .then((response) => {
-      cartStore.cart = response.data.items;
+      if (response.data) {
+        cartStore.initCart(response.data);
+      }
     })
     .catch((error) => {
-      console.error("Error fetching cart data:", error);
+      console.error("Error fetching cart:", error);
+    })
+    .finally(() => {
+      isLoading.value = false;
     });
-})
+});
 </script>
-<style>
+<style scoped>
 .quantity-btn:disabled:hover {
   background-color: inherit;
   box-shadow: none;
-  color: #aaa; /* isteğe bağlı: görünüm daha soluk olabilir */
+  color: #aaa;
 }
 .cart-container {
   max-width: 1200px;

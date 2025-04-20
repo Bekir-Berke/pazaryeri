@@ -150,13 +150,10 @@ const login = () => {
     email: email.value,
     passwordHash: password.value
   }).then(response => {
-    localStorage.setItem('access_token', response.data.access_token);
-    localStorage.setItem('refresh_token', response.data.refresh_token);
     isLoading.value = false;
     Swal.fire({
       icon: 'success',
       title: 'Giriş Başarılı, Ana Sayfaya Yönlendiriliyorsunuz',
-      text: response.data.message,
       timer: 2000,
     }).then(() => {
       loginStore.login();

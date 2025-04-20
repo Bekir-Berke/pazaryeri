@@ -226,9 +226,6 @@ const formDistricts = ref([]);
 const deleteAddress = (id) => {
   apiClient
     .delete(`/address/${id}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-      },
     })
     .then(() => {
       // defineModel kullanıldığında, doğrudan model değerini güncelleyebiliriz
@@ -250,9 +247,6 @@ const saveAddress = () => {
   if (editingAddressIndex.value === -1) {
     apiClient
       .post("/address/user", addressForm.value, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-        },
       })
       .then((response) => {
         // Yeni adresi ekleyin ve modeli güncelleyin
@@ -278,9 +272,6 @@ const saveAddress = () => {
   } else {
     apiClient
       .patch(`/address/${addressForm.value.id}`, addressForm.value, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-        },
       })
       .then((response) => {
         // Var olan adresi güncelleyin ve modeli güncelleyin
@@ -323,11 +314,6 @@ const setDefaultAddressById = (id) => {
     .patch(
       `/address/${id}/set-default`,
       {},
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-        },
-      }
     )
     .then(() => {
       // Tüm adreslerin isDefault değerini güncelle

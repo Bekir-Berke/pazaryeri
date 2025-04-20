@@ -102,6 +102,7 @@ export class CreateProductDto {
   categories: ProductCategoryDto[];
   
   @IsNotEmpty({ message: 'Mağaza ID zorunludur' })
+  @IsOptional()
   @IsUUID('all', { message: 'Geçerli bir mağaza ID giriniz' })
   storeId: string;
 }
@@ -113,7 +114,7 @@ export class ProductImageDto {
   
   @IsNotEmpty({ message: 'Görsel URL zorunludur' })
   @IsString()
-  @Matches(/^https?:\/\/.*\.(jpeg|jpg|png|webp|gif)$/, { 
+  @Matches(/^https?:\/\/.*\.(jpeg|jpg|png|webp)$/, { 
     message: "Geçerli bir görsel URL'i giriniz"
   })
   url: string;
@@ -157,7 +158,7 @@ export class ProductVariantDto {
   
   @IsOptional()
   @IsString()
-  @Matches(/^https?:\/\/.*\.(jpeg|jpg|png|webp|gif)$/, { 
+  @Matches(/^https?:\/\/.*\.(jpeg|jpg|png|webp)$/, { 
     message: "Geçerli bir görsel URL'i giriniz"
   })
   imageUrl?: string;

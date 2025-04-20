@@ -147,48 +147,19 @@
               </p>
             </div>
           </div>
-
-          <div class="section-title">
-            <h2>İletişim Tercihleri</h2>
-          </div>
-
-          <div class="preferences">
-            <div class="preference-item">
-              <label class="checkbox-container">
-                E-posta bildirimleri
-                <input
-                  type="checkbox"
-                  v-model="preferences.emailNotifications"
-                />
-                <span class="checkmark"></span>
-              </label>
-            </div>
-            <div class="preference-item">
-              <label class="checkbox-container">
-                SMS bildirimleri
-                <input type="checkbox" v-model="preferences.smsNotifications" />
-                <span class="checkmark"></span>
-              </label>
-            </div>
-            <div class="preference-item">
-              <label class="checkbox-container">
-                Kampanya bildirimleri
-                <input
-                  type="checkbox"
-                  v-model="preferences.promotionNotifications"
-                />
-                <span class="checkmark"></span>
-              </label>
-            </div>
-            <button class="save-preferences-btn" @click="savePreferences">
-              Tercihleri Kaydet
-            </button>
-          </div>
         </div>
 
         <!-- Placeholder for other tabs -->
         <div v-if="activeTab === 'addresses'">
           <Address v-model="user.addresses"/>
+        </div>
+
+        <div v-if="activeTab === 'payment'">
+          <Card v-model="user.cards"/>
+        </div>
+
+        <div v-if="activeTab === 'orders'">
+          <Orders v-model="user.orders"/>
         </div>
 
         <div v-if="activeTab === 'password'" class="password-section">
@@ -318,6 +289,8 @@
 <script setup>
 import apiClient from "@/api";
 import Address from "@/components/Address.vue";
+import Card from "@/components/Card.vue";
+import Orders from "@/components/Orders.vue";
 import router from "@/router";
 import { useLoggedInStore } from "@/stores/counter";
 import axios from "axios";
@@ -412,9 +385,6 @@ const validatePassword = () => {
 onMounted(() => {
   apiClient
     .get("/users/profile", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-      },
     })
     .then((response) => {
       user.value = response.data;
@@ -432,9 +402,6 @@ onMounted(() => {
 const saveProfile = () => {
   apiClient
     .patch("/users/profile", editForm.value, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-      },
     })
     .then((response) => {
       user.value = response.data;
@@ -449,9 +416,6 @@ const saveProfile = () => {
 
 const logout = () => {
   apiClient.post('/auth/logout', {},{
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('refresh_token')}`
-    }
   }).then(() => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
@@ -477,11 +441,6 @@ const changePassword = () => {
         oldPasswordHash: passwordForm.value.currentPassword,
         newPasswordHash: passwordForm.value.newPassword,
       },
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-        },
-      }
     )
     .then(() => {
       toast.success("Şifre başarıyla değiştirildi.");

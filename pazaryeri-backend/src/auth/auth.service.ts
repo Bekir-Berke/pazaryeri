@@ -80,6 +80,15 @@ export class AuthService {
             if(!store){
                 throw new NotFoundException('Mağaza bulunamadı');
             }
+            if(store.status == 'REJECTED'){
+                throw new UnauthorizedException('Mağaza reddedildi');
+            }
+            if(store.status == 'PENDING'){
+                throw new UnauthorizedException('Mağaza onay bekliyor');
+            }
+            if(store.status == 'SUSPENDED'){
+                throw new UnauthorizedException('Mağaza askıya alındı');
+            }
             const isMatch = bcrypt.compareSync(storeLoginDto.password, store.password);
             if(!isMatch){
                 throw new UnauthorizedException('Kullanıcı adı veya şifre hatalı');
@@ -111,6 +120,27 @@ export class AuthService {
                 throw new NotFoundException('Kullanıcı bulunamadı');
             }
             await this.redisService.delete(`refresh_token_${user.id}`);
+            console.log('Redis\'den refresh token silindi');
+            return {
+                message: 'Başarıyla çıkış yapıldı'
+            };
+        } catch (error) {
+            console.log(error);
+            throw new BadRequestException('Bir hata oluştu');
+        }
+    }
+    async storeLogout(refreshToken: string) {
+        try {
+            const payload = this.jwtService.verify(refreshToken, { ignoreExpiration: true });
+            if (payload.type !== 'refresh') {
+                throw new UnauthorizedException('Geçersiz token');
+            }
+            const store = await this.storeService.findOne(payload.sub);
+            if (!store) {
+                throw new NotFoundException('Mağaza bulunamadı');
+            }
+            await this.redisService.delete(`refresh_token_${store.id}`);
+            console.log('Redis\'den refresh token silindi');
             return {
                 message: 'Başarıyla çıkış yapıldı'
             };
@@ -145,5 +175,23 @@ export class AuthService {
             
         }
 
+    }
+    async getMe(userId) {
+        try {
+            const user = await this.usersService.findOne(userId);
+            if (!user) {
+                throw new NotFoundException('Kullanıcı bulunamadı');
+            }
+            const refreshToken = await this.redisService.get(`refresh_token_${user.id}`);
+            if (!refreshToken) {
+                throw new NotFoundException('Refresh token bulunamadı');
+            }
+            return true
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+            throw new BadRequestException('Bir hata oluştu');
+        }
     }
 }

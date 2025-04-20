@@ -19,8 +19,67 @@ model User {
   role         Role      @default(USER)
   addresses    Address[]
   cart         Cart?
+  orders       Order[]
+  cards        Card[]
 
   @@map("users")
+}
+
+model Order {
+  id          String      @id @default(uuid()) @db.Uuid
+  userId      String      @db.Uuid
+  orderNumber String      @unique
+  totalAmount Decimal     @db.Decimal(10, 2)
+  address     Address     @relation(fields: [addressId], references: [id])
+  phone       String?
+  cardId      String      @db.Uuid
+  card        Card        @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  user        User        @relation(fields: [userId], references: [id])
+  items       OrderItem[]
+  addressId   String      @db.Uuid
+
+  @@map("orders")
+}
+
+model Card {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  cardHolderName String   @map("card_holder_name")
+  cardNumber     String   @map("card_number")
+  expiryMonth    Int      @map("expiry_month")
+  expiryYear     Int      @map("expiry_year")
+  cvv            String   @map("cvv")
+  isDefault      Boolean  @default(false) @map("is_default")
+  cardType       String   @map("card_type")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Order          Order[]
+
+  @@map("cards")
+}
+
+model OrderItem {
+  id          String          @id @default(uuid()) @db.Uuid
+  orderId     String          @db.Uuid
+  productId   String          @db.Uuid
+  variantId   String?         @db.Uuid
+  productName String
+  variantName String?
+  quantity    Int
+  price       Decimal         @db.Decimal(10, 2)
+  storeId     String          @db.Uuid
+  imageUrl    String?
+  status      OrderStatus @default(PROCESSING)
+  createdAt   DateTime        @default(now())
+  order       Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product         @relation(fields: [productId], references: [id])
+  variant     ProductVariant? @relation(fields: [variantId], references: [id])
+  store       Store           @relation(fields: [storeId], references: [id])
+
+  @@map("order_items")
 }
 
 model Address {
@@ -36,6 +95,7 @@ model Address {
   isDefault    Boolean  @default(false) @map("is_default")
   createdAt    DateTime @default(now()) @map("created_at")
   user         User     @relation(fields: [userId], references: [id])
+  Order        Order[]
 
   @@map("addresses")
 }
@@ -60,6 +120,7 @@ model Store {
   createdAt      DateTime    @default(now())
   products       Product[]
   companyType    CompanyType @relation(fields: [companyTypeId], references: [id])
+  orders         OrderItem[]
 
   @@map("stores")
 }
@@ -97,6 +158,7 @@ model Product {
   brand       Brand              @relation(fields: [brandId], references: [id])
   store       Store              @relation(fields: [storeId], references: [id])
   CartItem    CartItem[]
+  OrderItem   OrderItem[]
 
   @@map("products")
 }
@@ -131,17 +193,19 @@ model ProductAttribute {
 }
 
 model ProductVariant {
-  id        String   @id @default(uuid()) @db.Uuid
-  sku       String?  @unique
+  id        String      @id @default(uuid()) @db.Uuid
+  sku       String?     @unique
   name      String
   price     Float?
-  stock     Int      @default(0)
+  stock     Int         @default(0)
   imageUrl  String?
-  productId String   @db.Uuid
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String      @db.Uuid
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
   CartItem  CartItem[]
+  OrderItem OrderItem[]
+
   @@map("product_variants")
 }
 
@@ -184,19 +248,19 @@ model Cart {
 }
 
 model CartItem {
-  id        String   @id @default(uuid()) @db.Uuid
-  cartId    String   @db.Uuid
-  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  productId String   @db.Uuid
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  variantId String?  @db.Uuid
+  id        String          @id @default(uuid()) @db.Uuid
+  cartId    String          @db.Uuid
+  cart      Cart            @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String          @db.Uuid
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId String?         @db.Uuid
   variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
-  quantity  Int      @default(1)
-  price     Decimal  @db.Decimal(10, 2)
-  createdAt DateTime @default(now())
+  quantity  Int             @default(1)
+  price     Decimal         @db.Decimal(10, 2)
+  createdAt DateTime        @default(now())
 
-  @@map("cart_items")
   @@unique([cartId, productId, variantId])
+  @@map("cart_items")
 }
 
 enum StoreStatus {
@@ -210,4 +274,14 @@ enum Role {
   USER
   STORE
   ADMIN
+}
+
+// Sipariş durumunu izlemek için enum
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
 }

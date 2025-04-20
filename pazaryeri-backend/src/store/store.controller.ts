@@ -22,14 +22,14 @@ export class StoreController {
 
   @Get('dashboard')
   @UseGuards(AuthGuard, PermissionsGuard)
-  @Permissions(Permission.READ_ANY_STORE)
+  @Permissions(Permission.READ_PROFILE)
   getDashboard(@Req() req: Request) {
     return this.storeService.findOne(req['user'].sub);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.storeService.findOne(id);
+    return this.storeService.findStoreProfile(id);
   }
 
   @Get(':id/products')

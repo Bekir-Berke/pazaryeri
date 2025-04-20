@@ -15,11 +15,16 @@
         <nav aria-label="breadcrumb" class="breadcrumb-container">
           <ol class="breadcrumb">
             <li class="breadcrumb-item">
-              <router-link to="/"><i class="bi bi-house-door-fill"></i> Ana Sayfa</router-link>
+              <router-link to="/"
+                ><i class="bi bi-house-door-fill"></i> Ana Sayfa</router-link
+              >
             </li>
             <li class="breadcrumb-item" v-if="product.categories">
-              <router-link :to="`/categories/${product.categories[0].categoryId}`">
-                <i class="bi bi-tag"></i> {{ product.categories[0].category.name }}
+              <router-link
+                :to="`/categories/${product.categories[0].categoryId}`"
+              >
+                <i class="bi bi-tag"></i>
+                {{ product.categories[0].category.name }}
               </router-link>
             </li>
             <li class="breadcrumb-item active" aria-current="page">
@@ -36,7 +41,7 @@
                 <span class="badge featured-badge">Öne Çıkan</span>
               </div>
               <img
-                :src="product.imageUrl"
+                :src="selectedImage"
                 :alt="product.name"
                 class="main-image"
                 @error="handleImageError"
@@ -47,9 +52,22 @@
                 class="product-thumbnails"
                 v-if="product.images && product.images.length > 0"
               >
+                <!-- Ana ürün görseli için thumbnail -->
                 <div
                   class="thumbnail-item"
-                  v-for="(image, index) in product.images"
+                  :class="{ active: selectedImage === product.imageUrl }"
+                  @click="selectedImage = product.imageUrl"
+                >
+                  <img
+                    :src="product.imageUrl"
+                    :alt="`${product.name} - Ana Görsel`"
+                  />
+                </div>
+                
+                <!-- Diğer görseller için thumbnails - ana görsel hariç -->
+                <div
+                  class="thumbnail-item"
+                  v-for="(image, index) in filteredImages"
                   :key="index"
                   :class="{ active: selectedImage === image.url }"
                   @click="selectedImage = image.url"
@@ -67,11 +85,14 @@
           <div class="col-lg-7">
             <div class="product-info">
               <h1 class="product-title">{{ currentProduct.name }}</h1>
-              
+
               <!-- Kategori Bilgisi -->
               <div class="category-info" v-if="product.category">
                 <span>Kategori: </span>
-                <router-link :to="`/categories/${product.category.id}`" class="category-name">
+                <router-link
+                  :to="`/categories/${product.category.id}`"
+                  class="category-name"
+                >
                   <i class="bi bi-tag-fill"></i> {{ product.category.name }}
                 </router-link>
               </div>
@@ -79,17 +100,33 @@
               <div class="store-info">
                 <span>Satıcı: </span>
                 <router-link
-                  :to="`/stores/${product.store.id}`"
+                  :to="`/store/${product.store.id}`"
                   class="store-name"
                 >
                   <i class="bi bi-shop"></i> {{ product.store.name }}
                 </router-link>
               </div>
+              <div class="brand-info" v-if="product.brand">
+                <span>Marka: </span>
+                <router-link
+                  :to="`/brands/${product.brand.id}`"
+                  class="brand-name"
+                >
+                  <i class="bi bi-shop"></i> {{ product.brand.name }}
+                </router-link>
+              </div>
 
               <div class="sku-info">
-                <span class="sku-badge"><i class="bi bi-upc-scan"></i> SKU: {{ currentProduct.sku || product.sku }}</span>
-                <span class="barcode-badge" v-if="currentProduct.barcode || product.barcode">
-                  <i class="bi bi-upc"></i> Barkod: {{ currentProduct.barcode || product.barcode }}
+                <span class="sku-badge"
+                  ><i class="bi bi-upc-scan"></i> SKU:
+                  {{ currentProduct.sku || product.sku }}</span
+                >
+                <span
+                  class="barcode-badge"
+                  v-if="currentProduct.barcode || product.barcode"
+                >
+                  <i class="bi bi-upc"></i> Barkod:
+                  {{ currentProduct.barcode || product.barcode }}
                 </span>
               </div>
 
@@ -117,14 +154,20 @@
                     v-for="variant in product.variants"
                     :key="variant.id"
                     class="variant-btn"
-                    :class="{ active: selectedVariant && selectedVariant.id === variant.id }"
+                    :class="{
+                      active:
+                        selectedVariant && selectedVariant.id === variant.id,
+                    }"
                     @click="selectVariant(variant)"
                   >
                     {{ variant.name }}
                   </button>
                 </div>
                 <div class="variant-details" v-if="selectedVariant">
-                  <span class="variant-highlight">Seçilen varyant: <strong>{{ selectedVariant.name }}</strong></span>
+                  <span class="variant-highlight"
+                    >Seçilen varyant:
+                    <strong>{{ selectedVariant.name }}</strong></span
+                  >
                 </div>
               </div>
 
@@ -132,18 +175,15 @@
               <div class="quantity-selector">
                 <label><i></i> Adet:</label>
                 <div class="quantity-controls">
-                  <button @click="decreaseQuantity" :disabled="quantity <= 1" class="quantity-btn">
-                    <i class="bi bi-dash"></i>
-                  </button>
-                  <input
-                    type="number"
-                    v-model.number="quantity"
-                    min="1"
-                  />
                   <button
-                    @click="increaseQuantity"
+                    @click="decreaseQuantity"
+                    :disabled="quantity <= 1"
                     class="quantity-btn"
                   >
+                    <i class="bi bi-dash"></i>
+                  </button>
+                  <input type="number" v-model.number="quantity" min="1" />
+                  <button @click="increaseQuantity" class="quantity-btn">
                     <i class="bi bi-plus"></i>
                   </button>
                 </div>
@@ -151,13 +191,18 @@
 
               <!-- Sepete ekle -->
               <div class="add-to-cart-section">
-                <button v-if="loggedInStore.loggedIn"
+                <button
+                  v-if="loggedInStore.loggedIn"
                   class="add-to-cart-btn"
                   @click="addToCart(currentProduct)"
                 >
                   <i class="bi bi-cart-plus"></i> Sepete Ekle
                 </button>
-                <button v-else class="add-to-cart-btn" @click="router.push('/login')">
+                <button
+                  v-else
+                  class="add-to-cart-btn"
+                  @click="router.push('/login')"
+                >
                   <i class="bi bi-cart-plus"></i> Sepete Ekle
                 </button>
                 <button class="wishlist-btn">
@@ -169,63 +214,58 @@
         </div>
 
         <!-- Ürün açıklaması ve diğer detaylar -->
-        <div class="product-details-tabs">
+        <div class="product-details-tabs mt-5">
           <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation">
-              <button
-                class="nav-link active"
-                id="description-tab"
-                data-bs-toggle="tab"
-                data-bs-target="#description"
-                type="button"
+              <button 
+                class="nav-link" 
+                :class="{ active: activeTab === 'description' }"
+                @click="activeTab = 'description'"
+                type="button" 
                 role="tab"
-                aria-controls="description"
-                aria-selected="true"
               >
                 <i class="bi bi-info-circle"></i> Ürün Açıklaması
               </button>
             </li>
-            <li
-              class="nav-item"
-              role="presentation"
-            >
-              <button
-                class="nav-link"
-                id="specs-tab"
-                data-bs-toggle="tab"
-                data-bs-target="#specs"
-                type="button"
+            <li class="nav-item" role="presentation">
+              <button 
+                class="nav-link" 
+                :class="{ active: activeTab === 'specs' }"
+                @click="activeTab = 'specs'"
+                type="button" 
                 role="tab"
-                aria-controls="specs"
-                aria-selected="false"
               >
                 <i class="bi bi-list-check"></i> Teknik Özellikler
               </button>
             </li>
           </ul>
           <div class="tab-content">
-            <div
-              class="tab-pane fade show active"
-              id="description"
+            <div 
+              class="tab-pane" 
+              :class="{ 'fade show active': activeTab === 'description' }"
               role="tabpanel"
-              aria-labelledby="description-tab"
             >
-              <p>{{ currentProduct.description || product.description }}</p>
+              <p>{{ product.description || 'Bu ürün için açıklama bulunmamaktadır.' }}</p>
             </div>
-            <div
-              class="tab-pane fade"
-              id="specs"
+            <div 
+              class="tab-pane" 
+              :class="{ 'fade show active': activeTab === 'specs' }"
               role="tabpanel"
-              aria-labelledby="specs-tab"
             >
-              <table class="specs-table">
-                <tbody>
-                  <tr v-for="attr in product.attributes" :key="attr.id">
-                    <th><i class="bi bi-check2-circle"></i> {{ attr.name }}</th>
-                    <td>{{ attr.value }}</td>
-                  </tr>
-                </tbody>
-              </table>
+              <div v-if="product.attributes && product.attributes.length > 0">
+                <table class="specs-table">
+                  <tbody>
+                    <tr v-for="attr in product.attributes" :key="attr.id">
+                      <th><i class="bi bi-check2-circle"></i> {{ attr.name }}</th>
+                      <td>{{ attr.value }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div v-else class="no-specs">
+                <i class="bi bi-exclamation-circle"></i>
+                <p>Bu ürün için teknik özellik bulunmamaktadır.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -245,7 +285,7 @@
 </template>
   
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useToast } from "vue-toast-notification";
 import { useCartStore, useLoggedInStore } from "@/stores/counter";
@@ -260,8 +300,9 @@ const isLoading = ref(true);
 const product = ref(null);
 const quantity = ref(1);
 const selectedVariant = ref(null);
-const selectedImage = computed(() => selectedVariant.value?.imageUrl || product.value?.imageUrl || "");
+const selectedImage = ref("");
 const loggedInStore = useLoggedInStore();
+const activeTab = ref("description");
 
 // Resim yükleme hatası durumu
 /*const handleImageError = (event) => {
@@ -277,53 +318,75 @@ const formatPrice = (price) => {
 };
 
 const increaseQuantity = () => {
-    return quantity.value++;
+  return quantity.value++;
 };
 
 const decreaseQuantity = () => {
-    return quantity.value > 1 ? quantity.value-- : 1;
+  return quantity.value > 1 ? quantity.value-- : 1;
 };
 
 const addToCart = (currentProduct) => {
-    const productDto = {
-      productId: product.value.id, // Always use the base product ID
-      quantity: quantity.value,
-    }
-    
-    // Add variantId to the request if a variant is selected
-    if (selectedVariant.value && selectedVariant.value.id) {
-      productDto.variantId = selectedVariant.value.id;
-    }
-    
-    apiClient.post('/cart', productDto, {
-      headers: {Authorization: `Bearer ${localStorage.getItem('access_token')}`}
-    }).then((response) => {
-        cartStore.addToCart(productDto);
-        $toast.success(`${currentProduct.name} sepete eklendi`, { duration: 1000 });
-    }).catch((error) => {
+  const productDto = {
+    productId: product.value.id,
+    quantity: quantity.value,
+  };
+
+  if (selectedVariant.value && selectedVariant.value.id) {
+    productDto.variantId = selectedVariant.value.id;
+  }
+
+  apiClient
+    .post("/cart", productDto, {
+    })
+    .then((response) => {
+      $toast.success(`${currentProduct.name} sepete eklendi`, {
+        duration: 1000,
+      });
+    })
+    .catch((error) => {
       console.error(error);
-      $toast.error('Sepete eklenirken bir hata oluştu.', { duration: 1000 });
+      $toast.error("Sepete eklenirken bir hata oluştu.", { duration: 1000 });
     });
 };
 
 const selectVariant = (variant) => {
   selectedVariant.value = variant;
   quantity.value = 1;
+  
+  // Varyant seçildiğinde görseli güncelle
+  if (variant && variant.imageUrl) {
+    selectedImage.value = variant.imageUrl;
+  } else if (product.value) {
+    // Varsayılan ürün görseline dön
+    selectedImage.value = product.value.imageUrl;
+  }
 };
 
+// Tekrarları önlemek için filtrelenmiş görsel listesi
+const filteredImages = computed(() => {
+  if (!product.value || !product.value.images) return [];
+  
+  // Ana görseli listeden çıkar
+  return product.value.images.filter(image => 
+    image.url !== product.value.imageUrl
+  );
+});
+
 onMounted(() => {
-    isLoading.value = true;
-    const productId = route.params.id;
-    apiClient.get(`/product/${productId}`)
-      .then((response) => {
-        product.value = response.data;
-        selectedImage.value = product.value.imageUrl;
-        isLoading.value = false;
-      })
-      .catch((error) => {
-        console.error("Error fetching product data:", error);
-        isLoading.value = false;
-      });
+  isLoading.value = true;
+  const productId = route.params.id;
+  apiClient
+    .get(`/product/${productId}`)
+    .then((response) => {
+      product.value = response.data;
+      selectedImage.value = product.value.imageUrl; // Varsayılan görsel
+      isLoading.value = false;
+      console.log(product.value.attributes);
+    })
+    .catch((error) => {
+      console.error("Error fetching product data:", error);
+      isLoading.value = false;
+    });
 });
 </script>
   
@@ -367,6 +430,36 @@ onMounted(() => {
 .breadcrumb-item.active {
   color: #333;
   font-weight: 500;
+}
+
+/* Brand bilgisi */
+.brand-info {
+  margin-bottom: 15px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.brand-name {
+  color: #e67300;
+  text-decoration: none;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s;
+  padding: 5px 12px;
+  border-radius: 20px;
+}
+
+.brand-name:hover {
+  color: #e67300;
+  transform: translateY(-2px);
+}
+
+.brand-name i {
+  color: #e67300;
 }
 
 /* Kategori bilgisi */
@@ -587,7 +680,8 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
-.sku-badge, .barcode-badge {
+.sku-badge,
+.barcode-badge {
   background-color: #f5f5f5;
   padding: 6px 12px;
   border-radius: 20px;
@@ -991,6 +1085,27 @@ onMounted(() => {
   background-color: #fafafa;
 }
 
+/* Teknik özellikler - boş durum */
+.no-specs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  color: #777;
+  text-align: center;
+}
+
+.no-specs i {
+  font-size: 2.5rem;
+  color: #ddd;
+  margin-bottom: 15px;
+}
+
+.no-specs p {
+  font-size: 1.1rem;
+}
+
 /* Responsive tasarım */
 @media (max-width: 991px) {
   .product-title {
@@ -1000,15 +1115,15 @@ onMounted(() => {
   .current-price {
     font-size: 1.8rem;
   }
-  
+
   .main-image {
     height: 300px;
   }
-  
+
   .quick-info {
     gap: 10px;
   }
-  
+
   .quick-info-item {
     padding: 10px;
     min-width: 120px;
@@ -1028,25 +1143,25 @@ onMounted(() => {
   .specs-table th {
     width: 40%;
   }
-  
+
   .product-detail {
     padding: 15px;
   }
-  
+
   .quantity-selector {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
   }
-  
+
   .stock-info {
     margin-left: 0;
   }
-  
+
   .quick-info-item {
     min-width: 100%;
   }
-  
+
   .main-image {
     height: 250px;
   }
@@ -1074,17 +1189,17 @@ onMounted(() => {
     padding: 12px 20px;
     font-size: 1rem;
   }
-  
+
   .product-price {
     flex-direction: column;
     align-items: flex-start;
     gap: 15px;
   }
-  
+
   .nav-tabs {
     gap: 5px;
   }
-  
+
   .nav-link {
     padding: 8px 12px;
     font-size: 0.85rem;

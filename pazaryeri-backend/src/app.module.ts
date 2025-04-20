@@ -12,9 +12,12 @@ import { RedisModule } from './redis/redis.module';
 import { BrandModule } from './brand/brand.module';
 import { UploadModule } from './upload/upload.module';
 import { CartModule } from './cart/cart.module';
+import { CompanyModule } from './company/company.module';
+import { OrderModule } from './order/order.module';
+import { CardModule } from './card/card.module';
 
 @Module({
-  imports: [UsersModule, AuthModule, ConfigModule.forRoot({envFilePath: '.env'}), AddressModule, StoreModule, ProductModule, CategoryModule, RedisModule, BrandModule, UploadModule, CartModule],
+  imports: [UsersModule, AuthModule, ConfigModule.forRoot({envFilePath: '.env'}), AddressModule, StoreModule, ProductModule, CategoryModule, RedisModule, BrandModule, UploadModule, CartModule, CompanyModule, OrderModule, CardModule],
   controllers: [AppController],
   providers: [AppService],
 })

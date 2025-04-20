@@ -17,38 +17,52 @@
           </div>
           
           <nav class="user-nav">
-            <ul v-if="!session.loggedIn">
-              <li>
-                <router-link to="/register" class="btn btn-outline-primary">Üye Ol</router-link>
-              </li>
-              <li>
-                <router-link to="/login" class="btn btn-primary">Giriş Yap</router-link>
-              </li>
-            </ul>
-            <ul v-else>
-              <li>
-                <div class="dropdown">
-                  <b-dropdown id="user-dropdown" text="Hesabım" variant="warning">
-                    <b-dropdown-item to="/account">
-                      <i class="bi bi-gear me-2"></i>Hesap Detayları
-                    </b-dropdown-item>
-                    <b-dropdown-item to="/orders">
-                      <i class="bi bi-box me-2"></i>Siparişlerim
-                    </b-dropdown-item>
-                    <b-dropdown-divider></b-dropdown-divider>
-                    <b-dropdown-item @click="handleLogout" class="logout">
-                      <i class="bi bi-box-arrow-right me-2"></i>Çıkış Yap
-                    </b-dropdown-item>
-                  </b-dropdown>
-                </div>
-              </li>
-              <li>
-                <router-link to="/cart" class="btn btn-outline-primary cart-btn">
-                  <i class="bi bi-cart"></i>
-                  <span class="cart-count">{{ cartCount }}</span>
+            <div v-if="!session.loggedIn">
+              <div class="seller-link-container">
+                <router-link to="/store" class="btn-seller">
+                  <i class="bi bi-shop me-1"></i>Pazaryerinde Satış Yap
                 </router-link>
-              </li>
-            </ul>
+              </div>
+              <ul class="auth-buttons">
+                <li>
+                  <router-link to="/register" class="btn btn-outline-primary">Üye Ol</router-link>
+                </li>
+                <li>
+                  <router-link to="/login" class="btn btn-primary">Giriş Yap</router-link>
+                </li>
+              </ul>
+            </div>
+            <div v-else>
+              <div class="seller-link-container">
+                <router-link to="/store" class="btn-seller">
+                  <i class="bi bi-shop me-1"></i>Pazaryerinde Satış Yap
+                </router-link>
+              </div>
+              <ul class="user-buttons">
+                <li>
+                  <div class="dropdown">
+                    <b-dropdown id="user-dropdown" text="Hesabım" variant="warning">
+                      <b-dropdown-item to="/account">
+                        <i class="bi bi-gear me-2"></i>Hesap Detayları
+                      </b-dropdown-item>
+                      <b-dropdown-item to="/orders">
+                        <i class="bi bi-box me-2"></i>Siparişlerim
+                      </b-dropdown-item>
+                      <b-dropdown-divider></b-dropdown-divider>
+                      <b-dropdown-item @click="handleLogout" class="logout">
+                        <i class="bi bi-box-arrow-right me-2"></i>Çıkış Yap
+                      </b-dropdown-item>
+                    </b-dropdown>
+                  </div>
+                </li>
+                <li>
+                  <router-link to="/cart" class="btn btn-outline-primary cart-btn">
+                    <i class="bi bi-cart"></i>
+                    <span class="cart-count">{{ cartCount }}</span>
+                  </router-link>
+                </li>
+              </ul>
+            </div>
           </nav>
         </div>
       </div>
@@ -70,13 +84,7 @@ const loginStore = useLoggedInStore();
 const cartStore = useCartStore();
 
 const handleLogout = () => {
-  apiClient.post('/auth/logout', {},{
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('refresh_token')}`
-    }
-  }).then(() => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+  apiClient.post('/auth/logout', {}).then(() => {
     loginStore.logout();
   });
 };
@@ -250,6 +258,35 @@ const cartCount = computed(() => {
   justify-content: center;
 }
 
+.seller-link-container {
+  text-align: right;
+  margin-bottom: 10px;
+}
+
+.btn-seller {
+  font-size: 0.85rem;
+  color: #ff7f00;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.btn-seller:hover {
+  color: #e67300;
+  text-decoration: underline;
+}
+
+.auth-buttons, .user-buttons {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
 @media (max-width: 768px) {
   .header-wrapper {
     flex-direction: column;
@@ -269,6 +306,15 @@ const cartCount = computed(() => {
   .user-nav {
     margin-top: 15px;
     display: flex;
+    justify-content: center;
+  }
+  
+  .seller-link-container {
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  
+  .auth-buttons, .user-buttons {
     justify-content: center;
   }
 }

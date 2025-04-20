@@ -21,9 +21,6 @@ export class UsersService {
       return this.cartService.create(user.id)
     })
   }
-  createAddress(id: string, createAddressDto: CreateAddressDto) {
-    return this.addressService.create(id, createAddressDto);
-  }
 
   findAll() {
     return this.prisma.user.findMany({include: {addresses:true}});
@@ -54,6 +51,37 @@ export class UsersService {
       createdAt:true,
       isActive:true,
       addresses:true,
+      cards:true,
+      orders:{
+        select:{
+          id:true,
+          createdAt:true,
+          totalAmount:true,
+          orderNumber:true,
+          items:{
+            select:{
+              id:true,
+              price:true,
+              quantity:true,
+              product:{
+                select:{
+                  imageUrl:true,
+                  store:{
+                    select:{
+                      id:true,
+                      name:true,
+                    }
+                  },
+                  id:true,
+                  name:true,
+                  price:true,
+                  images:true
+                }
+              }
+            }
+          }
+        }
+      }
     }})
   }
 }
