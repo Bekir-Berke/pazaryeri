@@ -23,7 +23,17 @@ export class UsersService {
   }
 
   findAll() {
-    return this.prisma.user.findMany({include: {addresses:true}});
+    return this.prisma.user.findMany({
+      select:{
+        id:true,
+        firstName:true,
+        lastName:true,
+        isActive:true,
+        email:true,
+        createdAt:true,
+        role:true
+      }
+    });
   }
 
   findOne(id: string) {
@@ -38,7 +48,7 @@ export class UsersService {
   }
 
   remove(id: string) {
-    return this.prisma.user.delete({where: {id}});
+    return this.prisma.user.update({where: {id}, data: {deletedAt: new Date()}});
   }
 
   getProfile(id: string) {
@@ -50,18 +60,39 @@ export class UsersService {
       lastName:true,
       createdAt:true,
       isActive:true,
-      addresses:true,
-      cards:true,
+      addresses:{
+        where:{deletedAt:null},
+      },
+      cards:{
+        where:{deletedAt:null},
+      },
       orders:{
         select:{
           id:true,
           createdAt:true,
           totalAmount:true,
           orderNumber:true,
+          invoices:{
+            select:{
+              id:true,
+              issuedAt:true,
+              invoiceNumber:true,
+              pdfUrl:true,
+            }
+          },
           items:{
             select:{
               id:true,
-              price:true,
+              Review:{
+                select:{
+                  id:true,
+                  createdAt:true,
+                  comment:true,
+                  rating:true,
+                }
+              },
+              status:true,
+              vatPrice:true,
               quantity:true,
               product:{
                 select:{
@@ -77,6 +108,41 @@ export class UsersService {
                   price:true,
                   images:true
                 }
+              }
+            }
+          }
+        }
+      },
+      favorites:{
+        select:{
+          id:true,
+          product:{
+            select:{
+              id:true,
+              name:true,
+              vatPrice:true,
+              imageUrl:true,
+              store:{
+                select:{
+                  id:true,
+                  name:true
+                }
+              }
+            }
+          }
+        }
+      },
+      reviews:{
+        select:{
+          id:true,
+          comment:true,
+          rating:true,
+          createdAt:true,
+          orderItem:{
+            select:{
+              productName:true,
+              product:{
+                select:{id:true, imageUrl:true}
               }
             }
           }

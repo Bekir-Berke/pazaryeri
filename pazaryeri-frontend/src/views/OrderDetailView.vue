@@ -26,7 +26,7 @@
           </div>
         </div>
 
-        <div class="order-section">
+        <div v-if="order.address !== null" class="order-section">
           <h2>Kargo Adresi</h2>
           <div class="address-card">
             <h3>{{ order.address.addressTitle }}</h3>
@@ -38,8 +38,21 @@
             <p class="address-phone">{{ formatPhone(order.phone) }}</p>
           </div>
         </div>
+        <div v-else class="order-section">
+          <h2>Kargo Adresi</h2>
+          <div class="address-card">
+            <h3>{{ order.addressTitle }}</h3>
+            <p class="recipient">{{ order.fullName }}</p>
+            <p class="address-detail">{{ order.fullAddress }}</p>
+            <p class="address-location">
+              {{ order.neighborhood }}, {{ order.district }} / {{ order.city }}
+            </p>
+            <p class="address-phone">{{ formatPhone(order.phone) }}</p>
+          </div>
+        </div>
+        
 
-        <div class="order-section">
+        <div v-if="order.card !== null" class="order-section">
           <h2>Ödeme Bilgileri</h2>
           <div class="payment-card">
             <div class="card-type">
@@ -51,6 +64,22 @@
               <p class="card-holder">{{ order.card.cardHolderName }}</p>
               <p class="card-number">{{ maskCardNumber(order.card.cardNumber) }}</p>
               <p class="card-expiry">Son Kullanma: {{ order.card.expiryMonth }}/{{ order.card.expiryYear }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="order-section">
+          <h2>Ödeme Bilgileri</h2>
+          <div class="payment-card">
+            <div class="card-type">
+              <span class="card-icon" :class="order.cardType.toLowerCase()">
+                {{ order.cardType }}
+              </span>
+            </div>
+            <div class="card-details">
+              <p class="card-holder">{{ order.cardHolderName }}</p>
+              <p class="card-number">{{ maskCardNumber(order.cardNumber) }}</p>
+              <p class="card-expiry">Son Kullanma: {{ order.expiryMonth }}/{{ order.expiryYear }}</p>
             </div>
           </div>
         </div>
@@ -78,8 +107,8 @@
               <span>{{ item.quantity }} adet</span>
             </div>
             <div class="item-price">
-              <p class="unit-price">{{ formatPrice(item.price) }} ₺</p>
-              <p class="total-price">Toplam: {{ formatPrice(item.price * item.quantity) }} ₺</p>
+              <p class="unit-price">{{ formatPrice(item.vatPrice) }} ₺</p>
+              <p class="total-price">Toplam: {{ formatPrice(item.vatPrice * item.quantity) }} ₺</p>
             </div>
           </div>
         </div>
@@ -105,7 +134,7 @@ const fetchOrder = async () => {
     try {
         const response = await apiClient.get(`/order/${route.params.id}`);
         order.value = response.data;
-        console.log(response.data);
+        console.log('Order data:', order.value);
     } catch (error) {
         console.error('Error fetching order:', error);
     }

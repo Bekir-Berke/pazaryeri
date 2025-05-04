@@ -21,6 +21,7 @@
           <div class="cart-item-details">
             <h4>{{ item.product.name }}</h4>
             <p class="cart-item-price">{{ formatPrice(item.price) }} x {{ item.quantity }}</p>
+            <p class="cart-item-tax">KDV: {{ formatPrice(calculateTax(item.price, item.product.vatRate)) }}</p>
           </div>
           <div class="cart-item-total">
             {{ formatPrice(item.price * item.quantity)}}
@@ -30,12 +31,17 @@
           <span>Toplam:</span>
           <span>{{ formatPrice(cartTotal) }}</span>
         </div>
+        <!-- Toplam KDV bilgisi ekleyelim -->
+        <div class="cart-vat-total">
+          <span>Toplam KDV:</span>
+          <span>{{ formatPrice(totalVatAmount) }}</span>
+        </div>
       </div>
     </div>
 
     <div class="checkout-section">
       <h3>Teslimat Adresi</h3>
-      <div class="form-group">
+      <div v-if="!showAddressForm" class="form-group">
         <div class="address-cards">
           <div v-for="address in user.addresses" :key="address.id" 
                class="address-card" 
@@ -48,13 +54,133 @@
             </div>
           </div>
         </div>
+        <div class="new-address-action">
+          <button @click="showAddressForm = true" class="btn-new-address">
+            <i class="bi bi-plus-circle"></i> Farklı Adres Kullanmak İstiyorum
+          </button>
+        </div>
+      </div>
+      
+      <!-- Yeni adres formu -->
+      <div v-else class="address-form">
+        <div class="form-fields">
+          <div class="form-row">
+            <div class="form-field">
+              <label for="addressTitle">Adres Başlığı</label>
+              <input 
+                type="text" 
+                id="addressTitle" 
+                v-model="newAddress.addressTitle" 
+                placeholder="Örn: Ev, İş"
+              >
+            </div>
+            <div class="form-field">
+              <label for="fullName">Tam Başlık</label>
+              <input 
+                type="text" 
+                id="fullName" 
+                v-model="newAddress.fullName" 
+                placeholder="Ad Soyad"
+              >
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-field">
+              <label for="phone">Telefon Numarası</label>
+              <input 
+                type="text" 
+                id="phone" 
+                v-model="newAddress.phone" 
+                placeholder="05XX XXX XX XX"
+              >
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-field">
+              <label for="city">İl</label>
+              <select
+                id="city"
+                v-model="newAddress.city"
+                class="form-control"
+                required
+                @change="getDistricts(newAddress.city)"
+              >
+                <option value="">Seçiniz</option>
+                <option
+                  v-for="province in provinces"
+                  :key="province.id"
+                  :value="province.name"
+                >
+                  {{ province.name }}
+                </option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="district">İlçe</label>
+              <select
+                id="city"
+                v-model="newAddress.district"
+                class="form-control"
+                required
+              >
+                <option value="">Seçiniz</option>
+                <option
+                  v-for="district in districts"
+                  :key="district.id"
+                  :value="district.name"
+                >
+                  {{ district.name }}
+                </option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-field">
+              <label for="neighborhood">Mahalle</label>
+              <input 
+                type="text" 
+                id="neighborhood" 
+                v-model="newAddress.neighborhood" 
+                placeholder="Mahalle"
+              >
+            </div>
+          </div>
+          
+          <div class="form-field full-width">
+            <label for="fullAddress">Açık Adres</label>
+            <textarea 
+              id="fullAddress" 
+              v-model="newAddress.fullAddress" 
+              placeholder="Sokak, Apartman No, Daire No"
+              rows="3"
+            ></textarea>
+          </div>
+          <div class="form-actions">
+            <div class="save-address-option">
+              <input type="checkbox" id="saveAddressOption" v-model="saveAddressChecked">
+              <label for="saveAddressOption">Adres bilgilerimi kaydet</label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-actions">
+          <button @click="showAddressForm = false" class="btn-cancel">
+            İptal
+          </button>
+          <button @click="saveNewAddress" class="btn-save">
+            Adresi Kullan
+          </button>
+        </div>
       </div>
     </div>
 
     <div class="checkout-section">
       <h3>Ödeme Bilgileri</h3>
       <div class="form-group">
-        <div class="payment-cards">
+        <div v-if="!showCardForm" class="payment-cards">
           <div v-for="card in user.cards" :key="card.id" 
                class="payment-card" 
                :class="{ 
@@ -77,11 +203,113 @@
             </div>
           </div>
         </div>
+        
+        <!-- Yeni kart formu -->
+        <div v-else class="card-form">
+          <div class="form-fields">
+            <div class="form-row">
+              <div class="form-field">
+                <label for="cardHolderName">Kart Üzerindeki İsim</label>
+                <input 
+                  type="text" 
+                  id="cardHolderName" 
+                  v-model="newCard.cardHolderName" 
+                  placeholder="Kart üzerindeki adınız"
+                >
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-field">
+                <label for="cardNumber">Kart Numarası</label>
+                <input 
+                  type="text" 
+                  id="cardNumber" 
+                  v-model="newCard.cardNumber" 
+                  placeholder="Kart numarası"
+                  @input="formatCardInput"
+                  :class="{
+                    'card-visa': newCard.cardBrand === 'Visa',
+                    'card-mastercard': newCard.cardBrand === 'Mastercard',
+                    'card-amex': newCard.cardBrand === 'American Express',
+                    'card-troy': newCard.cardBrand === 'Troy'
+                  }"
+                >
+                <small v-if="newCard.cardBrand" class="card-info-text">
+                  {{ newCard.cardBrand }} - {{ newCard.cartIssuer }}
+                </small>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-field">
+                <label for="expiryMonth">Ay</label>
+                <select
+                  id="expiryMonth"
+                  v-model="newCard.expiryMonth"
+                  class="form-control"
+                  required
+                >
+                  <option value="">Ay</option>
+                  <option v-for="month in 12" :key="month" :value="String(month).padStart(2, '0')">
+                    {{ String(month).padStart(2, '0') }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="expiryYear">Yıl</label>
+                <select
+                  id="expiryYear"
+                  v-model="newCard.expiryYear"
+                  class="form-control"
+                  required
+                >
+                  <option value="">Yıl</option>
+                  <option v-for="year in 10" :key="year" :value="String(new Date().getFullYear() + year - 1).slice(-2)">
+                    {{ new Date().getFullYear() + year - 1 }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="cvv">CVV</label>
+                <input 
+                  type="text" 
+                  id="cvv" 
+                  v-model="newCard.cvv" 
+                  placeholder="CVV"
+                  maxlength="3"
+                >
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <div class="save-card-option">
+                <input type="checkbox" id="saveCardOption" v-model="saveCardChecked">
+                <label for="saveCardOption">Kart bilgilerimi kaydet</label>
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-actions">
+            <button @click="showCardForm = false" class="btn-cancel">
+              İptal
+            </button>
+            <button @click="saveNewCard" class="btn-save">
+              Kartı Kullan
+            </button>
+          </div>
+        </div>
+        
+        <div v-if="!showCardForm" class="new-card-action">
+          <button @click="showCardForm = true" class="btn-new-address">
+            <i class="bi bi-plus-circle"></i> Farklı Kart Kullanmak İstiyorum
+          </button>
+        </div>
       </div>
     </div>
 
     <div class="checkout-footer">
-      <button class="btn-checkout" :disabled="!orderDto.addressId || !orderDto.cardId" @click="checkout()">
+      <button class="btn-checkout" @click="checkout()">
         Ödemeyi Tamamla
       </button>
     </div>
@@ -92,13 +320,22 @@
 import {computed, onMounted, ref} from "vue";
 import { useRoute } from "vue-router";
 import apiClient from "@/api.js";
+import axios from "axios";
 import {useCartStore} from "@/stores/counter.js";
 import Swal from "sweetalert2";
 const cartStore = useCartStore();
 const router = useRoute();
+const provinces = ref([]);
+const districts = ref([]);
 const cartCount = computed(() => {
   return cartStore.cart.map(item => item.quantity).reduce((a, b) => a + b, 0);
 });
+
+const calculateTax = (price, vatRate) => {
+  if (!price || !vatRate) return 0;
+  const taxAmount = (parseFloat(price) * parseFloat(vatRate)) / 100;
+  return taxAmount;
+};
 
 const cartTotal = computed(() => {
   return cartStore.cart.reduce((total, item) => 
@@ -112,28 +349,57 @@ const formatPrice = (price) => {
   }).format(price);
 };
 
-const getBankName = (cardNumber, index) => {
-  axios.get(`https://bin.bekirberke.tr/bin/${cardNumber}`)
+const totalVatAmount = computed(() => {
+  return cartStore.cart.reduce((total, item) => {
+    const itemVat = calculateTax(item.price, item.product.vatRate) * item.quantity;
+    return total + itemVat;
+  }, 0);
+});
+const getProvinces = () => {
+  axios.get("https://turkiyeapi.herokuapp.com/api/v1/provinces")
     .then(response => {
-      cards.value[index] = {
-        ...cards.value[index],
-        issuer: response.data.issuer || 'Bilinmiyor',
-        type: response.data.type || '',
-        category: response.data.category || '',
-        brand: response.data.brand || '',
-        issuerPhone: response.data.issuerPhone || '',
-        issuerUrl: response.data.issuerUrl || '',
-        country: response.data.country || '',
-        alpha_2: response.data.alpha_2 || '',
-        alpha_3: response.data.alpha_3 || '',
-        showDetails: false
+      provinces.value = response.data.data;
+      console.log('Provinces:', provinces.value);
+    })
+    .catch(error => {
+      console.error('Error fetching provinces:', error);
+    });
+}
+const getDistricts = (province) => {
+  axios
+    .get(
+      `https://turkiyeapi.herokuapp.com/api/v1/districts?province=${province}`
+    )
+    .then((response) => {
+      districts.value = response.data.data;
+    });
+};
+
+const checkBIN = (binNumber) => {
+  axios.get(`https://bin.bekirberke.tr/bin/${binNumber}`)
+    .then(response => {
+      if (response.data) {
+        newCard.value.cardBrand = response.data.brand || '';
+        newCard.value.cartIssuer = response.data.issuer || 'Bilinmiyor';
+        newCard.value.cardType = response.data.type || '';
+        
+        // Kart tipine göre otomatik stil değişikliği için
+        const firstDigit = binNumber.charAt(0);
+        if (firstDigit === '4') {
+          newCard.value.cardBrand = 'Visa';
+        } else if (firstDigit === '5') {
+          newCard.value.cardBrand = 'Mastercard';
+        } else if (firstDigit === '3') {
+          newCard.value.cardBrand = 'American Express';
+        } else if (firstDigit === '9') {
+          newCard.value.cardBrand = 'Troy';
+        }
       }
     })
     .catch(error => {
-      console.error('Error fetching bank name:', error);
-      cards.value[index].issuer = 'Bilinmiyor';
+      console.error('Error fetching BIN information:', error);
     });
-}
+};
 
 const orderDto = ref({
   addressId: null,
@@ -151,27 +417,268 @@ const formatCardNumber = (cardNumber) => {
 };
 
 const checkout = () => {
-  orderDto.value.phone = user.value.addresses.find(address => address.id === orderDto.value.addressId)?.phone;
-  apiClient.post('/order', orderDto.value).then((response) => {
+  const orderData = { ...orderDto.value };
+  const selectedAddress = user.value.addresses.find(address => address.id === orderDto.value.addressId);
+  
+  if (selectedAddress) {
+    orderData.phone = selectedAddress.phone;
+    if (!selectedAddress.id || typeof selectedAddress.id === 'string' && !selectedAddress.id.includes('-')) {
+      orderData.address = {
+        addressTitle: selectedAddress.addressTitle || 'Geçici Adres',
+        fullName: selectedAddress.fullName,
+        phone: selectedAddress.phone,
+        city: selectedAddress.city,
+        district: selectedAddress.district,
+        neighborhood: selectedAddress.neighborhood,
+        fullAddress: selectedAddress.fullAddress
+      };
+      delete orderData.addressId;
+    }
+  } else {
     Swal.fire({
-      icon: 'success',
-      title: 'Siparişiniz Başarılıyla Oluşturuldu',
-      text: 'Siparişi numaranız: ' + response.data.orderNumber,
-      timer:2000,
-      showConfirmButton: false,
-    }).then(() => {
-      cartStore.clearCart();
-      router.push({path:'/'});
+      icon: 'error',
+      title: 'Adres Seçimi Gerekli',
+      text: 'Lütfen bir teslimat adresi seçiniz'
     });
-  }).catch((error) => {
-    console.error("Error placing order:", error);
-  });
+    return;
+  }
+  
+  const selectedCard = user.value.cards.find(card => card.id === orderDto.value.cardId);
+  
+  if (selectedCard) {
+    if (!selectedCard.id || typeof selectedCard.id === 'string' && !selectedCard.id.includes('-')) {
+      orderData.card = {
+        cardHolderName: selectedCard.cardHolderName,
+        cardNumber: selectedCard.cardNumber.replace(/\s+/g, ''),
+        cardBrand: selectedCard.cardBrand || 'Unknown',
+        cardType: selectedCard.cardType || 'Unknown',
+        cartIssuer: selectedCard.cartIssuer || 'Unknown',
+        expiryMonth: selectedCard.expiryMonth,
+        expiryYear: selectedCard.expiryYear,
+        cvv: selectedCard.cvv
+      };
+      delete orderData.cardId;
+    }
+  } else {
+    Swal.fire({
+      icon: 'error',
+      title: 'Ödeme Bilgisi Gerekli',
+      text: 'Lütfen bir ödeme yöntemi seçiniz'
+    });
+    return;
+  }
+  
+  // Sipariş oluşturma işlemini başlatalım
+  apiClient.post('/order', orderData)
+    .then((response) => {
+      Swal.fire({
+        icon: 'success',
+        title: 'Siparişiniz Başarıyla Oluşturuldu',
+        text: 'Sipariş numaranız: ' + response.data.orderNumber,
+        timer: 2000,
+        showConfirmButton: false,
+      }).then(() => {
+        cartStore.clearCart();
+        router.push({ path: '/' });
+      });
+    })
+    .catch((error) => {
+      console.error("Sipariş oluşturulurken hata:", error);
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'Sipariş Oluşturulamadı',
+        text: error.response?.data?.message || 'Sipariş oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.'
+      });
+    });
 }
 
+const showAddressForm = ref(false);
+const newAddress = ref({
+  addressTitle: '',
+  fullName: '',
+  phone: '',
+  city: '',
+  district: '',
+  neighborhood: '',
+  fullAddress: ''
+});
+const saveAddressChecked = ref(false)
+
+const saveNewAddress = () => {
+  if (saveAddressChecked.value) {
+    apiClient.post('/address/user', {
+      addressTitle: newAddress.value.addressTitle,
+      fullName: newAddress.value.fullName,
+      phone: newAddress.value.phone,
+      city: newAddress.value.city,
+      district: newAddress.value.district,
+      neighborhood: newAddress.value.neighborhood,
+      fullAddress: newAddress.value.fullAddress
+    })
+    .then(response => {
+      const savedAddress = response.data;
+      user.value.addresses.push(savedAddress);
+      orderDto.value.addressId = savedAddress.id;
+      showAddressForm.value = false;
+      Swal.fire({
+        icon: 'success',
+        title: 'Adres Başarıyla Kaydedildi',
+        text: 'Yeni adresiniz kaydedildi.',
+        timer: 1000,
+        showConfirmButton: false
+      });
+    })
+    .catch(error => {
+      console.error("Adres kaydedilirken bir hata oluştu:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Hata!',
+        text: 'Adres kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.'
+      });
+    });
+  } else {
+    user.value.addresses.push(newAddress.value);
+    orderDto.value.addressId = newAddress.value.id;
+  }
+  showAddressForm.value = false;
+  newAddress.value = {
+    addressTitle: '',
+    fullName: '',
+    phone: '',
+    city: '',
+    district: '',
+    neighborhood: '',
+    fullAddress: ''
+  };
+};
+
+const showCardForm = ref(false);
+const saveCardChecked = ref(false);
+const newCard = ref({
+  cardHolderName:'',
+  cardNumber:'',
+  cardBrand:'',
+  cardType:'',   
+  cartIssuer:'' ,
+  expiryMonth:'',    
+  expiryYear:'',   
+  cvv:''            
+});
+
+const saveNewCard = () => {
+  // Eğer checkBIN ile kart tipi belirlenmemişse, ilk rakama göre tahmin et
+  if (!newCard.value.cardBrand) {
+    let cardBrand = 'Unknown';
+    const firstDigit = newCard.value.cardNumber.charAt(0);
+    if (firstDigit === '4') {
+      cardBrand = 'Visa';
+    } else if (firstDigit === '5') {
+      cardBrand = 'Mastercard';
+    } else if (firstDigit === '3') {
+      cardBrand = 'American Express';
+    } else if (firstDigit === '9') {
+      cardBrand = 'Troy';
+    }
+    newCard.value.cardBrand = cardBrand;
+  }
+  
+  const cardData = {
+    cardHolderName: newCard.value.cardHolderName,
+    cardNumber: newCard.value.cardNumber,
+    expiryMonth: newCard.value.expiryMonth,
+    expiryYear: newCard.value.expiryYear,
+    cvv: newCard.value.cvv,
+    cardType: newCard.value.cardType,
+    cardBrand: newCard.value.cardBrand,
+    cardIssuer: newCard.value.cartIssuer
+  };
+  
+  if (saveCardChecked.value) {
+    apiClient.post('/card', {
+      cardHolderName: cardData.cardHolderName,
+      cardNumber: cardData.cardNumber,
+      expiryMonth: cardData.expiryMonth,
+      expiryYear: cardData.expiryYear,
+      cvv:cardData.cvv,
+      cardType: cardData.cardType,
+      cardBrand: cardData.cardBrand,
+      cardIssuer: cardData.cardIssuer,
+      isDefault:false
+    })
+    .then(response => {
+      const savedCard = response.data;
+      user.value.cards.push(savedCard);
+      orderDto.value.cardId = savedCard.id;
+      showCardForm.value = false;
+      
+      Swal.fire({
+        icon: 'success',
+        title: 'Kart Başarıyla Kaydedildi',
+        text: 'Yeni kartınız hesabınıza kaydedildi.',
+        timer: 1000,
+        showConfirmButton: false
+      });
+    })
+    .catch(error => {
+      console.error("Kart kaydedilirken bir hata oluştu:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Hata!',
+        text: 'Kart kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.'
+      });
+    });
+  } else {
+    // Geçici olarak ekle
+    user.value.cards.push(cardData);
+    orderDto.value.cardId = cardData.id;
+    showCardForm.value = false;
+  }
+  
+  // Form alanlarını temizle
+  newCard.value = {
+    cardHolderName: '',
+    cardNumber: '',
+    cardBrand: '',
+    cardType: '',   
+    cartIssuer: '',
+    expiryMonth: '',    
+    expiryYear: '',   
+    cvv: ''            
+  };
+};
+
+// Kart numarası formatlamak için yeni fonksiyon
+const formatCardInput = (event) => {
+  // Girişten boşlukları temizleyelim ve sadece sayıları alalım
+  let value = event.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+  
+  // Maksimum 16 karakter sınırı 
+  if (value.length > 16) {
+    value = value.slice(0, 16);
+  }
+  
+  // Her 4 karakterde bir boşluk ekleyelim
+  const formattedValue = value.replace(/(.{4})/g, '$1 ').trim();
+  
+  // Input değerini güncelleyelim
+  newCard.value.cardNumber = formattedValue;
+  
+  // BIN kontrolü için boşlukları temizleyip kontrol edelim
+  const rawCardNumber = formattedValue.replace(/\s+/g, '');
+  if (rawCardNumber.length === 6) {
+    checkBIN(rawCardNumber);
+  } else if (rawCardNumber.length < 6) {
+    // Eğer kullanıcı silerse ya da 6'dan az hane girerse bilgileri sıfırla
+    newCard.value.cardBrand = '';
+    newCard.value.cartIssuer = '';
+  }
+};
+
 onMounted(() => {
+  getProvinces();
   apiClient.get('/users/profile').then((response) => {
     user.value = response.data;
-    console.log("User profile fetched successfully:", user.value.addresses);
   }).catch((error) => {
     console.error("Error fetching user profile:", error);
   });
@@ -179,6 +686,21 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.cart-vat-total {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #666;
+  border-top: 1px dashed #eee;
+}
+.cart-item-tax {
+  color: #888;
+  margin: 0;
+  font-size: 0.8rem;
+  font-style: italic;
+}
 .checkout-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -296,6 +818,27 @@ h3 {
   margin-bottom: 1.5rem;
   font-size: 16px;
   background-color: white;
+}
+
+/* Select kutusu için stiller */
+.form-control {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background-color: white;
+  appearance: auto; /* Native görünümü korumak için */
+  height: 38px; /* input'larla aynı yüksekliği sağlamak için */
+}
+
+/* Form alanı select olduğunda ekstra stillemeler */
+.form-field select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath fill='%23333' d='M0 2l4 4 4-4z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 8px 8px;
+  padding-right: 2rem;
 }
 
 .address-cards, .payment-cards {
@@ -440,6 +983,133 @@ h3 {
 .btn-checkout:disabled {
   background-color: #b0b0b0;
   cursor: not-allowed;
+}
+
+.new-address-action {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.btn-new-address {
+  background-color: #4a6da7;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-new-address:hover {
+  background-color: #3a5d97;
+}
+
+.address-form {
+  background-color: white;
+  border-radius: 6px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.form-fields {
+  margin-bottom: 1rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-field {
+  flex: 1;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.form-field input, .form-field textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.form-field textarea {
+  resize: none;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-cancel {
+  background-color: rgb(191, 35, 35);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-cancel:hover {
+  background-color: #999;
+}
+
+.btn-save {
+  background-color: #4a6da7;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-save:hover {
+  background-color: #3a5d97;
+}
+
+.card-info-text {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: #4a6da7;
+}
+
+/* Kredi kartı markalarına göre renkli gösterim */
+.form-field input.card-visa {
+  border-color: #0057a0;
+  background-color: #f0f7ff;
+}
+
+.form-field input.card-mastercard {
+  border-color: #ee0b2d;
+  background-color: #fff6f8;
+}
+
+.form-field input.card-amex {
+  border-color: #2671b5;
+  background-color: #f0f7ff;
+}
+
+.form-field input.card-troy {
+  border-color: #00a185;
+  background-color: #f0faf8;
 }
 
 @media (max-width: 768px) {

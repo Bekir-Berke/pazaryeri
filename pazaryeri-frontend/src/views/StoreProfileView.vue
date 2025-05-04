@@ -72,7 +72,7 @@
             </div>
             <div class="product-info">
               <h3 class="product-name">{{ product.name }}</h3>
-              <p class="product-price">{{ formatPrice(product.price) }}</p>
+              <p class="product-price">{{ formatPrice(product.vatPrice) }}</p>
               <button class="btn-view-product" @click="viewProductDetails(product.id)">
                 <i class="bi bi-eye"></i> Ürünü İncele
               </button>

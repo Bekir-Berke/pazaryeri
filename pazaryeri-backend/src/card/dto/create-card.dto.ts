@@ -18,6 +18,12 @@ export class CreateCardDto {
     @IsNotEmpty({message:'Kart tipi boş olamaz.'})
     cardType: string;
 
+    @IsNotEmpty({message:'Lisans boş olamaz.'})
+    cardBrand: string;
+
+    @IsNotEmpty({message:'Banka boş olamaz.'})
+    cardIssuer: string;
+
     @IsNotEmpty({message: 'Varsayılan kart boş olamaz.'})
     isDefault: boolean;
 }

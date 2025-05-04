@@ -36,10 +36,78 @@ export class AuthController {
     });
   }
 
-  @Post('refresh')
+  @Post('admin-login')
   @HttpCode(200)
-  refresh(@Body('refresh_token') refreshToken: string) {
-    return this.authService.refresh(refreshToken);
+  async adminLogin(@Body() loginDto: LoginDto, @Res({ passthrough: true }) response: Response) {
+    const tokens = await this.authService.adminLogin(loginDto);
+    response.cookie('access_token', tokens.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV !== 'development',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000 // 1 day
+    });
+
+    response.cookie('refresh_token', tokens.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV !== 'development',
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    });
+  }
+  @Post('admin-logout')
+  @HttpCode(200)
+  async adminLogout(@Req() req: Request, @Res({ passthrough: true }) response: Response) {
+    const refreshToken = req.cookies?.refresh_token;
+    await this.authService.adminLogout(refreshToken).then(() => {
+      response.clearCookie('access_token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV !== 'development',
+        sameSite: 'strict'
+      });
+      response.clearCookie('refresh_token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV !== 'development',
+        sameSite: 'strict'
+      });
+      response.status(200).send({
+        message: 'Çıkış yapıldı'
+      });
+    }
+    ).catch((err) => {
+      console.log(err);
+    });
+  }
+
+  @Get('refresh')
+  @HttpCode(200)
+  async refresh(@Req() req: Request, @Res({ passthrough: true }) response: Response) {
+    const refreshToken = req.cookies?.refresh_token;
+    if (!refreshToken) {
+      response.status(401).send({
+        message: 'Refresh token bulunamadı'
+      });
+      return;
+    }
+    
+    try {
+      const result = await this.authService.refresh(refreshToken);
+      
+      // Burada access_token direkt string olarak alınmalı
+      const access_token = result.access_token;
+      
+      response.cookie('access_token', access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV !== 'development',
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000
+      });
+      
+      return { success: true };
+    } catch (error) {
+      response.status(401).send({
+        message: 'Refresh token geçersiz'
+      });
+    }
   }
 
   @Post('store-login')

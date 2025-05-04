@@ -32,6 +32,11 @@
                 >Favorilerim</a
               >
             </li>
+            <li :class="{ active: activeTab === 'reviews' }">
+              <a href="#" @click.prevent="activeTab = 'reviews'"
+                >Değerlendirmelerim</a
+              >
+            </li>
             <li :class="{ active: activeTab === 'payment' }">
               <a href="#" @click.prevent="activeTab = 'payment'"
                 >Ödeme Yöntemlerim</a
@@ -160,6 +165,14 @@
 
         <div v-if="activeTab === 'orders'">
           <Orders v-model="user.orders"/>
+        </div>
+
+        <div v-if="activeTab === 'favorites'">
+          <Favorite v-model="user.favorites"/>
+        </div>
+
+        <div v-if="activeTab === 'reviews'">
+          <Reviews v-model="user.reviews"/>
         </div>
 
         <div v-if="activeTab === 'password'" class="password-section">
@@ -291,9 +304,10 @@ import apiClient from "@/api";
 import Address from "@/components/Address.vue";
 import Card from "@/components/Card.vue";
 import Orders from "@/components/Orders.vue";
+import Favorite from "@/components/Favorite.vue";
+import Reviews from "@/components/Reviews.vue";
 import router from "@/router";
 import { useLoggedInStore } from "@/stores/counter";
-import axios from "axios";
 import { computed, onMounted, ref } from "vue";
 import { useToast } from "vue-toast-notification";
 
@@ -303,11 +317,6 @@ const editMode = ref(false);
 const editForm = ref({firstName: "", lastName: "", email: ""});
 const toast = useToast();
 const loginStore = useLoggedInStore();
-const preferences = ref({
-  emailNotifications: false,
-  smsNotifications: false,
-  promotionNotifications: false,
-});
 const passwordForm = ref({
   currentPassword: "",
   newPassword: "",

@@ -36,7 +36,7 @@
                 
                 <div class="product-price">
                   <span v-if="product.discountRate" class="old-price">{{ formatPrice(product.oldPrice) }}</span>
-                  <span class="current-price">{{ formatPrice(product.price) }}</span>
+                  <span class="current-price">{{ formatPrice(product.vatPrice) }}</span>
                 </div>
                 
                 <button v-if="loggedInStore.loggedIn" class="add-to-cart-btn" @click="addToCart(product)">

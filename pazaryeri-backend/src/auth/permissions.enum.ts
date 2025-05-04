@@ -4,6 +4,15 @@ export enum Permission {
     UPDATE_PROFILE = 'update:profile',
     DELETE_PROFILE = 'delete:profile',
     CREATE_ADDRESS= 'create:address',
+    CREATE_REVIEW = 'create:review',
+    READ_REVIEW = 'read:review',
+    UPDATE_REVIEW = 'update:review',
+    DELETE_REVIEW = 'delete:review',
+
+    CREATE_FAVORITE = 'create:favorite',
+    READ_FAVORITE = 'read:favorite',
+    UPDATE_FAVORITE = 'update:favorite',
+    DELETE_FAVORITE = 'delete:favorite',
 
     CREATE_CARD = 'create:card',
     READ_CARD = 'read:card',
@@ -38,6 +47,8 @@ export enum Permission {
     READ_ANY_STORE = 'read:any_store',
     UPDATE_ANY_STORE = 'update:any_store',
     DELETE_ANY_STORE = 'delete:any_store',
+
+    READ_ALL_ORDERS = 'read:all_orders',
 
     CREATE_BRAND = 'create:brand',
     READ_ALL_BRANDS = 'read:all_brands',

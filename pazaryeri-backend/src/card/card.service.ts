@@ -33,6 +33,12 @@ export class CardService {
   }
 
   remove(userId:string, id: string) {
-    return this.prisma.card.delete({where:{id, userId}})
+    return this.prisma.card.update({
+      where:{id, userId},
+      data:{
+        deletedAt:new Date(),
+        isDefault:false
+      }
+    })
   }
 }

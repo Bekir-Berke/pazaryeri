@@ -16,13 +16,42 @@ import AddProductView from '@/views/AddProductView.vue'
 import CheckoutView from "@/views/CheckoutView.vue";
 import OrderDetailView from '@/views/OrderDetailView.vue'
 import StoreProfileView from '@/views/StoreProfileView.vue'
-const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
+import AdminLoginView from "@/views/AdminLoginView.vue";
+import AdminDashboardView from "@/views/AdminDashboardView.vue";
+import ForbiddenView from "@/views/ForbiddenView.vue";
+import SearchView from '@/views/SearchView.vue'
+const routes = [
     {
       path: '/',
       name: 'home',
       component: HomeView,
+    },
+    {
+      path:'/search',
+      name:'search',
+      component: SearchView,
+    },
+    {
+      path: '/forbidden',
+      name: 'forbidden',
+      component: ForbiddenView,
+      meta: {
+        title: 'Erişim Reddedildi'
+      }
+    },
+    {
+      path:'/admin/login',
+      name:'admin-login',
+      component: AdminLoginView,
+    },
+    {
+      path:'/admin/dashboard',
+      name:'admin-dashboard',
+      component: AdminDashboardView,
+      meta:{
+        requiresAuth: true,
+        roles:['ADMIN']
+      }
     },
     {
       path:'/product/:id',
@@ -33,6 +62,10 @@ const router = createRouter({
       path:'/order/:id',
       name:'order',
       component: OrderDetailView,
+      meta: {
+        requiresAuth: true,
+        roles:['ADMIN','USER']
+      }
     },
     {
       path:'/category/:id',
@@ -44,16 +77,9 @@ const router = createRouter({
       name:'account',
       component: AccountView,
       meta: {
-        requiresAuth: true
+        requiresAuth: true,
+        roles:['ADMIN','USER']
       },
-      beforeEnter: (to, from, next) => {
-        const isAuthenticated = useLoggedInStore().loggedIn
-        if (!isAuthenticated) {
-          next({ name: 'login' });
-        } else {
-          next();
-        }
-      }
     },
     {
       path:'/login',
@@ -68,12 +94,20 @@ const router = createRouter({
     {
       path:'/cart',
       name:'cart',
-      component: CartView
+      component: CartView,
+      meta:{
+        requiresAuth: true,
+        roles:['ADMIN','USER']
+      }
     },
     {
       path:'/checkout',
       name:'checkout',
       component: CheckoutView,
+      meta:{
+        requiresAuth: true,
+        roles:['ADMIN','USER']
+      }
     },
     {
       path: '/store-page',
@@ -97,7 +131,7 @@ const router = createRouter({
       }
     },
     {
-      path: '/store-login',
+      path: '/store/login',
       name: 'store-login',
       component: StoreLoginView,
       meta: {
@@ -110,6 +144,7 @@ const router = createRouter({
       component: StoreDashboardView,
       meta: {
         requiresAuth: true,
+        roles: ['STORE','ADMIN'],
         title: 'Pazaryerinde Satış Yap'
       },
     },
@@ -122,6 +157,7 @@ const router = createRouter({
     component: AddProductView,
     meta: {
       requiresAuth: true,
+      roles: ['STORE','ADMIN'],
       title: 'Pazaryerinde Satış Yap'
     },
    },
@@ -129,9 +165,20 @@ const router = createRouter({
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: NotFound
-    }
-    
-  ],
+    } 
+  ]
+const router = createRouter({
+  history: createWebHistory(import.meta.env.BASE_URL),
+  routes
 })
-
+router.beforeEach((to, from, next) => {
+  const loggedInStore = useLoggedInStore();
+  const isLoggedIn = loggedInStore.loggedIn;
+  const userRole = loggedInStore.role;
+    if (to.meta.roles && !to.meta.roles.includes(userRole)) {
+      next({ name: 'forbidden' });
+    } else {
+      next();
+    }
+});
 export default router

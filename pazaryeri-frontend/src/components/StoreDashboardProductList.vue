@@ -91,7 +91,7 @@
         </div>
         <div class="product-details">
           <div class="product-price">
-            <span class="price">{{ formatPrice(product.price) }}</span>
+            <span class="price">{{ formatPrice(product.vatPrice) }}</span>
             <span class="sku">SKU: {{ product.sku }}</span>
           </div>
           <div class="stock-info">

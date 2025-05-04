@@ -15,7 +15,15 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
         Permission.UPDATE_CARD,
         Permission.DELETE_CARD,
         Permission.CREATE_ORDER,
-        Permission.READ_ORDER
+        Permission.READ_ORDER,
+        Permission.UPDATE_FAVORITE,
+        Permission.CREATE_FAVORITE,
+        Permission.READ_FAVORITE,
+        Permission.DELETE_FAVORITE,
+        Permission.CREATE_REVIEW,
+        Permission.READ_REVIEW,
+        Permission.UPDATE_REVIEW,
+        Permission.DELETE_REVIEW,
     ],
     [Role.STORE]: [
         Permission.READ_PROFILE,
@@ -25,6 +33,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
         Permission.UPDATE_PRODUCT,
         Permission.DELETE_PRODUCT,
         Permission.UPDATE_ORDER,
+        Permission.READ_REVIEW,
     ],
     [Role.ADMIN]: [
         Permission.READ_PROFILE,
@@ -38,6 +47,8 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
         Permission.READ_ANY_USER,
         Permission.UPDATE_ANY_USER,
         Permission.DELETE_ANY_USER,
+
+        Permission.READ_ALL_ORDERS,
 
         Permission.READ_ALL_STORES,
         Permission.READ_ANY_STORE,

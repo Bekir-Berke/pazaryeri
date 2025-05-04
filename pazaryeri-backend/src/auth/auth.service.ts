@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { RedisService } from 'src/redis/redis.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { th } from '@faker-js/faker';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +18,9 @@ export class AuthService {
             const user = await this.usersService.findOneByEmail(loginDto.email);
 
             if (!user) {
+                throw new NotFoundException('Kullanıcı bulunamadı');
+            }
+            if(user.deletedAt){
                 throw new NotFoundException('Kullanıcı bulunamadı');
             }
             const isMatch = bcrypt.compareSync(loginDto.passwordHash, user.passwordHash);
@@ -38,6 +42,53 @@ export class AuthService {
             if (error instanceof NotFoundException || error instanceof UnauthorizedException) {
                 throw error;
             }
+            throw new BadRequestException('Bir hata oluştu');
+        }
+    }
+    async adminLogin(loginDto: LoginDto){
+      try{
+        const user = await this.usersService.findOneByEmail(loginDto.email);
+        if(!user){
+            throw new NotFoundException('Kullanıcı bulunamadı');
+        }
+        if(user.role !== 'ADMIN'){
+            throw new UnauthorizedException('Yetkisiz erişim');
+        }
+        const isMatch = bcrypt.compareSync(loginDto.passwordHash, user.passwordHash);
+        if(!isMatch){
+          throw new UnauthorizedException('Kullanıcı adı veya şifre hatalı')
+        }
+        const payload = {sub: user.id, role: user.role};
+        const access_token = this.jwtService.sign({...payload, type: 'access'}, { expiresIn: '1d' })
+        const refresh_token = this.jwtService.sign({...payload, type: 'refresh'}, { expiresIn: '30d' })
+        await this.redisService.set(`refresh_token_${user.id}`, refresh_token, 60 * 60 * 24 * 30).then(() => {
+          console.log('Redis\'e refresh token kaydedildi');
+        })
+        return {
+          access_token,
+          refresh_token
+        };
+      }catch (error){
+        throw new BadRequestException('Bir hata oluştu');
+      }
+    }
+    async adminLogout(refreshToken: string) {
+        try {
+            const payload = this.jwtService.verify(refreshToken, { ignoreExpiration: true });
+            if (payload.type !== 'refresh') {
+                throw new UnauthorizedException('Geçersiz token');
+            }
+            const user = await this.usersService.findOne(payload.sub);
+            if (!user) {
+                throw new NotFoundException('Kullanıcı bulunamadı');
+            }
+            await this.redisService.delete(`refresh_token_${user.id}`);
+            console.log('Redis\'den refresh token silindi');
+            return {
+                message: 'Başarıyla çıkış yapıldı'
+            };
+        } catch (error) {
+            console.log(error);
             throw new BadRequestException('Bir hata oluştu');
         }
     }
@@ -65,11 +116,16 @@ export class AuthService {
             if (refreshToken !== redisToken) {
                 throw new UnauthorizedException('Geçersiz token');
             }
-            const access_token = this.jwtService.sign({...payload, type: 'access'}, { expiresIn: '1d' });
-            return {
-                access_token
-            };
+            
+            // Eski payload'dan exp ve iat değerlerini çıkar
+            const { exp, iat, ...rest } = payload;
+            
+            // Yeni bir access token oluştur
+            const access_token = this.jwtService.sign({ ...rest, type: 'access' }, { expiresIn: '1d' });
+            
+            return { access_token };
         } catch (error) {
+            console.log(error);
             throw new BadRequestException('Bir hata oluştu');
         }
     }
@@ -94,13 +150,18 @@ export class AuthService {
                 throw new UnauthorizedException('Kullanıcı adı veya şifre hatalı');
             }
             const payload = {sub: store.id, role: 'STORE'};
+            const access_token = this.jwtService.sign({...payload, type: 'access'}, {
+                expiresIn: '1d'
+            })
+            const refresh_token = this.jwtService.sign({...payload, type: 'refresh'}, {
+                expiresIn: '30d'
+            })
+            await this.redisService.set(`refresh_token_${store.id}`, refresh_token, 60 * 60 * 24 * 30).then(() => {
+                console.log('Redis\'e refresh token kaydedildi');
+            })
             return {
-                access_token: this.jwtService.sign({...payload, type: 'access'}, {
-                    expiresIn: '1d'
-                }),
-                refresh_token: this.jwtService.sign({...payload, type: 'refresh'}, {
-                    expiresIn: '30d'
-                })
+                access_token,
+                refresh_token
             };
         } catch (error) {
             if (error instanceof NotFoundException || error instanceof UnauthorizedException) {
@@ -180,13 +241,21 @@ export class AuthService {
         try {
             const user = await this.usersService.findOne(userId);
             if (!user) {
-                throw new NotFoundException('Kullanıcı bulunamadı');
+                const store = await this.storeService.findOne(userId);
+                if (!store) {
+                    throw new NotFoundException('Kullanıcı bulunamadı');
+                }
+                const refreshToken = await this.redisService.get(`refresh_token_${store.id}`);
+                if (!refreshToken) {
+                    throw new NotFoundException('Refresh token bulunamadı');
+                }
+                return {"success": true, "role": "STORE"};
             }
             const refreshToken = await this.redisService.get(`refresh_token_${user.id}`);
             if (!refreshToken) {
                 throw new NotFoundException('Refresh token bulunamadı');
             }
-            return true
+            return {"success": true, "role": user.role};
         } catch (error) {
             if (error instanceof NotFoundException) {
                 throw error;

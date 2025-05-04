@@ -125,4 +125,25 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
     return `${today}-${String(count).padStart(4, '4')}`
   }
+
+  async generateInvoiceNumber(){
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+    
+    const yearMonth = `${year}${month}`;
+    
+    const counterKey = `invoice:counter:${yearMonth}`;
+    const sequence = await this.redisClient.incr(counterKey);
+    
+    if (sequence === 1) {
+      const nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+      const ttl = Math.floor((nextMonth.getTime() - currentDate.getTime()) / 1000);
+      await this.redisClient.expire(counterKey, ttl);
+    }
+    
+    const formattedSequence = sequence.toString().padStart(6, '0');
+    
+    return `FTR-${yearMonth}-${formattedSequence}`;
+  }
 }

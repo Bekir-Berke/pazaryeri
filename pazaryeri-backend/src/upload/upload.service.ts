@@ -49,6 +49,21 @@ export class UploadService {
       const fileResult = `https://pub-${this.accountId}.r2.dev/${fileName}`
       return fileResult;
     }
+
+    async uploadPdf(file: Buffer, filename:string): Promise<string> {
+      const fileName = `/${filename}.pdf`;
+      const uploadParams = {
+        Bucket: this.bucket,
+        Key: fileName,
+        Body: file,
+        ContentType: 'application/pdf',
+      };
+  
+      await this.s3Client.send(new PutObjectCommand(uploadParams));
+      const fileResult = `https://pub-${this.accountId}.r2.dev/${fileName}`
+      return fileResult;
+    }
+    
     async deleteFile(fileUrl: string): Promise<void> {
       const fileKey = fileUrl.replace(`${process.env.CLOUDFLARE_R2_ENDPOINT}/${this.bucket}/`, '');
       const deleteParams = {

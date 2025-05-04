@@ -188,7 +188,7 @@
                 <div class="tab-content">
                   <div class="tab-pane fade show active" id="signup" role="tabpanel">
                     <div class="mb-3">
-                      <button class="btn btn-primary w-100 py-2">Hemen Başvur</button>
+                      <button @click="router.push('/store-application')" class="btn btn-primary w-100 py-2">Hemen Başvur</button>
                     </div>
                     <p class="text-center mb-0"><small>Başvuru yapmadan önce <a href="#" class="text-decoration-none">şartları</a> okuyunuz</small></p>
                   </div>

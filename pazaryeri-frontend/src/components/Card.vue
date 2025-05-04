@@ -231,11 +231,49 @@ function resetCardForm() {
   cardForm.expireMonth = '';
   cardForm.expireYear = '';
   cardForm.cvv = '';
+  cardForm.cardType = '';
+  cardForm.cardIssuer = '';
+  cardForm.cardBrand = '';
   cardForm.isDefault = false;
 }
+async function getCardInfo(cardNumber) {
+  return axios.get(`https://bin.bekirberke.tr/bin/${cardNumber}`)
+    .then(response => {
+      return {
+        issuer: response.data.issuer || 'Bilinmiyor',
+        type: response.data.type || '',
+        category: response.data.category || '',
+        brand: response.data.brand || '',
+        issuerPhone: response.data.issuerPhone || '',
+        issuerUrl: response.data.issuerUrl || '',
+        country: response.data.country || '',
+        alpha_2: response.data.alpha_2 || '',
+        alpha_3: response.data.alpha_3 || ''
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching card info:', error);
+      return null;
+    });
+}
 
-function saveCard() {
-  cardForm.value.cardType = getCardType(cardForm.cardNumber)
+async function saveCard() {
+  const bin = cardForm.cardNumber.replace(/\s/g, '').slice(0, 6);
+  const cardInfo = await getCardInfo(bin);
+  if(!cardInfo) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Hata',
+      text: 'Kart bilgileri alınamadı.',
+      showConfirmButton: false,
+      timer: 1500
+    });
+    return;
+  }
+  cardForm.value.cardType = cardInfo.type;
+  cardForm.value.cardIssuer = cardInfo.issuer;
+  cardForm.value.cardBrand = cardInfo.brand;
+
   apiClient.post('/card', cardForm.value).then((response) => {
     Swal.fire({
       icon: 'success',

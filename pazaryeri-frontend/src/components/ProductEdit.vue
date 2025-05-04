@@ -46,6 +46,21 @@
                 </div>
                 
                 <div class="form-group">
+                  <label for="productVatRate">KDV Oranı (%)*</label>
+                  <input 
+                    type="number" 
+                    id="productVatRate" 
+                    v-model="product.vatRate" 
+                    class="form-control" 
+                    step="0.01" 
+                    min="0"
+                    max="100"
+                    @blur="formatVatRate"
+                    required
+                  />
+                </div>
+                
+                <div class="form-group">
                   <label for="productStock">Stok*</label>
                   <input 
                     type="number" 
@@ -56,6 +71,11 @@
                     required
                   />
                 </div>
+              </div>
+
+              <div class="price-with-tax" v-if="product.price > 0 && product.vatRate > 0">
+                <span class="price-label">KDV Dahil Fiyat:</span>
+                <span class="price-value">{{ calculatePriceWithTax(product.price, product.vatRate) }} ₺</span>
               </div>
               
               <div class="form-group">
@@ -196,12 +216,19 @@
   onMounted(() => {
     loadBrands();
   });
+  const formatVatRate = () => {
+    if (props.product.vatRate) {
+      props.product.vatRate = parseFloat(props.product.vatRate).toFixed(2);
+    }
+  };
+
   const saveProduct = async () => {
     saving.value = true;
     try {
       const formData = new FormData();
       formData.append('name', props.product.name);
       formData.append('price', props.product.price);
+      formData.append('vatRate', props.product.vatRate); // Add VAT rate to form data
       formData.append('stock', props.product.stock);
       formData.append('sku', props.product.sku);
       formData.append('brandId', props.product.brand.id);
@@ -212,6 +239,9 @@
         formData.append('image', fileInput.value.files[0]);
       }
       await apiClient.patch(`/product/${props.product.id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       });
       emit('update');
       emit('close');
@@ -224,11 +254,39 @@
   const closeModal = () => {
     emit('close');
   };
+  const calculatePriceWithTax = (price, vatRate) => {
+  if (!price || !vatRate) return "0.00";
+  
+  const taxAmount = (parseFloat(price) * parseFloat(vatRate)) / 100;
+  const totalPrice = parseFloat(price) + taxAmount;
+  
+  return totalPrice.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+};
   </script>
   
   <style scoped>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-  
+  .price-with-tax {
+  background-color: #f0f7ff;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.price-label {
+  font-size: 14px;
+  color: #495057;
+}
+
+.price-value {
+  font-weight: 600;
+  color: #0056b3;
+  font-size: 16px;
+}
+
   .modal-overlay {
     position: fixed;
     top: 0;

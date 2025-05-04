@@ -16,6 +16,8 @@ export class StoreController {
   }
   
   @Get()
+  @UseGuards(AuthGuard,PermissionsGuard)
+  @Permissions(Permission.READ_ALL_STORES)
   findAll() {
     return this.storeService.findAll();
   }

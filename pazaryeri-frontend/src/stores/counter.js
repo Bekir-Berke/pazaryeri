@@ -24,18 +24,21 @@ export const useCategoryStore = defineStore('categories', () => {
 })
 export const useLoggedInStore = defineStore('loggedIn', () => {
   const loggedIn = ref(false);
+  const role = ref(null);
   function login() {
     loggedIn.value = true;
   }
   function logout() {
     loggedIn.value = false;
   }
-  return { loggedIn, login, logout }
+  function setRole(userRole) {
+    role.value = userRole;
+  }
+  return { loggedIn, login, logout, setRole, role }
 })
 export const useCartStore = defineStore('cart', () => {
   const cart = ref([]);
 
-  // Initialize cart with data from API
   function initCart(cartData) {
     if (cartData && cartData.items) {
       cart.value = cartData.items;

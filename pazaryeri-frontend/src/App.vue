@@ -8,8 +8,9 @@ const loginStore = useLoggedInStore();
 const cartStore = useCartStore();
 onMounted(() => {
   apiClient.get("/auth/me").then((response) => {
-    if (response.data) {
+    if (response.data.success === true) {
       loginStore.login();
+      loginStore.setRole(response.data.role);
       apiClient.get("/cart").then((response) => {
         if (response.data) {
           cartStore.initCart(response.data);

@@ -17,23 +17,33 @@ export class CategoryService {
   findAll() {
     return this.prisma.category.findMany({
       where: {
-        parentId: null,  // Sadece ana kategoriler
+        parentId: null,
+        deletedAt: null  // Sadece ana kategoriler
       },
       orderBy: {
         level: 'asc',  // Ana kategorileri level'e göre sırala
       },
       include: {
         children: {
+          where:{
+            deletedAt: null  // Sadece alt kategoriler
+          },
           orderBy: {
             level: 'asc',  // Alt kategorileri level'e göre sırala
           },
           include: {
             children: {
+              where:{
+                deletedAt: null  // Sadece alt kategoriler
+              },
               orderBy: {
                 level: 'asc',  // Alt-alt kategorileri level'e göre sırala
               },
               include: {
                 children: {
+                  where:{
+                    deletedAt: null  // Sadece alt kategoriler
+                  },
                   orderBy: {
                     level: 'asc',  // En alt seviye kategorileri level'e göre sırala
                   }
@@ -82,9 +92,10 @@ export class CategoryService {
   }
 
   remove(id: string) {
-    return this.prisma.category.delete({
-      where: {id}
-    });
+    return this.prisma.category.update({
+      where: {id},
+      data: {deletedAt: new Date()}
+    })
   }
 
   createSubCategory(createSubCategoryDto:CreateSubCategoryDto){
@@ -117,8 +128,9 @@ export class CategoryService {
   }
 
   removeSubCategory(id: string){
-    return this.prisma.category.delete({
-      where: {id}
+    return this.prisma.category.update({
+      where: {id},
+      data: {deletedAt: new Date()}
     });
   }
 }

@@ -16,10 +16,11 @@ import { CartService } from 'src/cart/cart.service';
   imports: [PrismaModule, UsersModule, JwtModule.register({
     global: true,
     secret: process.env.JWT_SECRET,
+
   }),
   AddressModule,
   RedisModule,
-  ConfigModule
+  ConfigModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, UsersService, StoreService, RedisService, CartService],

@@ -1,0 +1,9 @@
+-- AlterTable
+ALTER TABLE "orders" ALTER COLUMN "card_brand" DROP NOT NULL,
+ALTER COLUMN "card_holder_name" DROP NOT NULL,
+ALTER COLUMN "card_number" DROP NOT NULL,
+ALTER COLUMN "card_type" DROP NOT NULL,
+ALTER COLUMN "cart_issuer" DROP NOT NULL,
+ALTER COLUMN "cvv" DROP NOT NULL,
+ALTER COLUMN "expiry_month" DROP NOT NULL,
+ALTER COLUMN "expiry_year" DROP NOT NULL;

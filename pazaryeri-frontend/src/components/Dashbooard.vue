@@ -129,7 +129,9 @@
                   <tr>
                     <th>Ürün</th>
                     <th>SKU</th>
-                    <th>Fiyat</th>
+                    <th>Fiyat (KDV Hariç)</th>
+                    <th>KDV Oranı</th>
+                    <th>Fiyat (KDV Dahil)</th>
                     <th>Stok</th>
                     <th>Durum</th>
                     <th>İşlemler</th>
@@ -147,7 +149,9 @@
                       </div>
                     </td>
                     <td><span class="sku-badge">{{ product.sku }}</span></td>
-                    <td class="price-cell">{{ formatPrice(product.price) }}</td>
+                    <td class="price-cell">{{ product.price }}</td>
+                    <td class="tax-cell">%{{ product.vatRate }}</td>
+                    <td class="price-cell">{{ product.vatPrice }}</td>
                     <td>
                       <span class="stock-indicator" :class="getStockClass(product.stock)">
                         {{ product.stock }}
@@ -303,7 +307,7 @@ import { ref, computed, onMounted } from 'vue';
   });
   
   const averagePrice = computed(() => {
-    const total = storeData.products.reduce((sum, product) => sum + parseFloat(product.price), 0);
+    const total = storeData.products.reduce((sum, product) => sum + parseFloat(product.vatPrice), 0);
     return (total / storeData.products.length).toFixed(2);
   });
   
@@ -782,6 +786,10 @@ import { ref, computed, onMounted } from 'vue';
 
 .price-cell {
   font-weight: 600;
+  color: #333;
+}
+
+.tax-cell {
   color: #333;
 }
 

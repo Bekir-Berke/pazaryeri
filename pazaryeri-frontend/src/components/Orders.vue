@@ -36,8 +36,15 @@
               </p>
               <p class="item-store">Satıcı: {{ item.product.store.name }}</p>
               <p class="item-price">
-                {{ formatPrice(item.variant ? item.variant.price : item.price) }}
+                {{ formatPrice(item.variant ? item.variant.vatPrice : item.vatPrice) }}
               </p>
+              <button 
+                v-if="canBeReviewed(item.status, item.Review)"
+                @click="openReviewModal(item)" 
+                class="btn-review"
+              >
+                {{ item.reviewed ? 'Değerlendirmeyi Düzenle' : 'Değerlendir' }}
+              </button>
             </div>
           </div>
         </div>
@@ -54,12 +61,70 @@
       </div>
     </div>
   </div>
+  
+  <!-- Değerlendirme modal penceresi -->
+  <div v-if="showReviewModal" class="review-modal-overlay">
+    <div class="review-modal">
+      <h3>Ürün Değerlendirmesi</h3>
+      <div v-if="currentItem" class="review-product-info">
+        <img 
+          v-if="currentItem.product.imageUrl" 
+          :src="currentItem.product.imageUrl" 
+          :alt="currentItem.product.name"
+        >
+        <div v-else class="no-image">Görsel Yok</div>
+        <div class="product-info">
+          <h4>{{ currentItem.product.name }}</h4>
+          <p v-if="currentItem.variant">Varyant: {{ currentItem.variant.name }}</p>
+        </div>
+      </div>
+      
+      <div class="rating-select">
+        <p>Puanınız:</p>
+        <div class="stars">
+          <span 
+            v-for="i in 5" 
+            :key="i" 
+            @click="selectedRating = i"
+            :class="{'star-selected': i <= selectedRating}"
+            class="star"
+          >★</span>
+        </div>
+      </div>
+      
+      <div class="review-comment">
+        <p>Yorumunuz:</p>
+        <textarea 
+          v-model="reviewComment" 
+          placeholder="Bu ürün hakkındaki düşüncelerinizi paylaşın..."
+          rows="4"
+        ></textarea>
+      </div>
+      
+      <div class="modal-actions">
+        <button @click="showReviewModal = false; currentItem = null;" class="btn-cancel">İptal</button>
+        <button 
+          @click="submitReview(selectedRating, reviewComment)" 
+          :disabled="!selectedRating" 
+          class="btn-submit"
+        >
+          Gönder
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { defineModel } from 'vue';
+import apiClient from '@/api';
+import Swal from 'sweetalert2';
+import { defineModel, ref } from 'vue';
 
 const orders = defineModel();
+const showReviewModal = ref(false);
+const currentItem = ref(null);
+const selectedRating = ref(0);
+const reviewComment = ref('');
 
 const formatDate = (dateString) => {
   const date = new Date(dateString);
@@ -96,6 +161,47 @@ const getStatusClass = (status) => {
     'status-delivered': status === 'DELIVERED',
     'status-cancelled': status === 'CANCELLED'
   };
+};
+
+const canBeReviewed = (orderStatus, isReviewed) => {
+  return orderStatus === 'DELIVERED' && !isReviewed;
+};
+
+const openReviewModal = (item) => {
+  currentItem.value = item;
+  showReviewModal.value = true;
+};
+
+const submitReview = async (rating, comment) => {
+  try {
+    apiClient.post('review',{
+      orderItemId: currentItem.value.id,
+      rating,
+      comment
+    });
+    
+    // Başarılı olursa, öğeyi güncelle
+    currentItem.value.reviewed = true;
+    
+    // Modalı kapat
+    showReviewModal.value = false;
+    currentItem.value = null;
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Başarılı',
+      text: 'Değerlendirmeniz başarıyla gönderildi.',
+      confirmButtonText: 'Tamam'
+    });
+  } catch (error) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Hata',
+      text: 'Değerlendirme gönderilirken bir hata oluştu. Lütfen tekrar deneyin.',
+      confirmButtonText: 'Tamam'
+    });
+    console.error('Review submission error:', error);
+  }
 };
 </script>
 
@@ -264,6 +370,24 @@ const getStatusClass = (status) => {
   font-size: 0.95rem;
 }
 
+.btn-review {
+  margin-top: 0.5rem;
+  background-color: transparent;
+  border: 1px solid #0066cc;
+  color: #0066cc;
+  padding: 0.3rem 0.7rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-review:hover {
+  background-color: #0066cc;
+  color: white;
+}
+
 .order-footer {
   display: flex;
   justify-content: space-between;
@@ -296,6 +420,120 @@ const getStatusClass = (status) => {
 .btn-details:hover {
   background-color: #ff7f00; /* Tema rengi */
   color: white;
+}
+
+.review-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.review-modal {
+  background-color: white;
+  border-radius: 8px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.review-modal h3 {
+  margin-top: 0;
+  color: #333;
+  border-bottom: 1px solid #eaeaea;
+  padding-bottom: 0.8rem;
+}
+
+.review-product-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.review-product-info img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-right: 1rem;
+}
+
+.product-info h4 {
+  margin: 0 0 0.3rem 0;
+  font-size: 1rem;
+}
+
+.product-info p {
+  margin: 0;
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.rating-select {
+  margin-bottom: 1.5rem;
+}
+
+.stars {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.star {
+  font-size: 1.5rem;
+  color: #ccc;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.star:hover, .star-selected {
+  color: #ff9900;
+}
+
+.review-comment textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.btn-cancel {
+  padding: 0.6rem 1.2rem;
+  border: 1px solid #ddd;
+  background-color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-submit {
+  padding: 0.6rem 1.2rem;
+  background-color: #ff7f00;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-submit:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {

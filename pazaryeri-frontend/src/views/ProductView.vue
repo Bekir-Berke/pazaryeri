@@ -132,7 +132,7 @@
 
               <div class="product-price">
                 <span class="current-price">{{
-                  formatPrice(currentProduct.price)
+                  formatPrice(currentProduct.vatPrice)
                 }}</span>
               </div>
 
@@ -189,8 +189,9 @@
                 </div>
               </div>
 
-              <!-- Sepete ekle -->
+              <!-- Sepete ekle ve favorilere ekle butonları -->
               <div class="add-to-cart-section">
+                <!-- Sepete ekle butonu -->
                 <button
                   v-if="loggedInStore.loggedIn"
                   class="add-to-cart-btn"
@@ -205,8 +206,28 @@
                 >
                   <i class="bi bi-cart-plus"></i> Sepete Ekle
                 </button>
-                <button class="wishlist-btn">
+                
+                <!-- Favorilere ekle butonu - login kontrolü ekledik -->
+                <button
+                  v-if="loggedInStore.loggedIn && !product.isFavorited"
+                  @click="addToFavorites()"
+                  class="wishlist-btn"
+                >
                   <i class="bi bi-heart"></i>
+                </button>
+                <button
+                  v-else-if="loggedInStore.loggedIn && product.isFavorited"
+                  @click="removeFromFavorites()"
+                  class="wishlist-btn favorited"
+                >
+                  <i class="bi bi-heart-fill"></i>  
+                </button>
+                <button
+                  v-else
+                  @click="router.push('/login')"
+                  class="wishlist-btn"
+                >
+                  <i class="bi bi-heart"></i>  
                 </button>
               </div>
             </div>
@@ -238,6 +259,17 @@
                 <i class="bi bi-list-check"></i> Teknik Özellikler
               </button>
             </li>
+            <li class="nav-item" role="presentation">
+              <button 
+                class="nav-link" 
+                :class="{ active: activeTab === 'reviews' }"
+                @click="activeTab = 'reviews'"
+                type="button" 
+                role="tab"
+              >
+                <i class="bi bi-star"></i> Değerlendirmeler
+              </button>
+            </li>
           </ul>
           <div class="tab-content">
             <div 
@@ -265,6 +297,49 @@
               <div v-else class="no-specs">
                 <i class="bi bi-exclamation-circle"></i>
                 <p>Bu ürün için teknik özellik bulunmamaktadır.</p>
+              </div>
+            </div>
+            
+            <!-- Değerlendirmeler sekmesi -->
+            <div 
+              class="tab-pane" 
+              :class="{ 'fade show active': activeTab === 'reviews' }"
+              role="tabpanel"
+            >
+              <div v-if="product.reviews.length > 0">
+                <div class="reviews-summary">
+                  <div class="average-rating">
+                    <div class="rating-number">{{ calculateAverageRating() }}</div>
+                    <div class="rating-stars">
+                      <i v-for="star in 5" :key="star" class="bi" 
+                        :class="star <= Math.round(calculateAverageRating()) ? 'bi-star-fill' : 'bi-star'"></i>
+                    </div>
+                    <div class="rating-count">{{ product.reviews.length }} değerlendirme</div>
+                  </div>
+                </div>
+                
+                <div class="reviews-list">
+                  <div v-for="review in product.reviews" :key="review.id" class="review-item">
+                    <div class="review-header">
+                      <div class="review-user">
+                        <i class="bi bi-person-circle"></i>
+                        <span class="user-name">{{ review.user.firstName }}</span>
+                      </div>
+                      <div class="review-date">{{ formatReviewDate(review.createdAt) }}</div>
+                    </div>
+                    
+                    <div class="review-rating">
+                      <i v-for="star in 5" :key="star" class="bi" 
+                        :class="star <= review.rating ? 'bi-star-fill' : 'bi-star'"></i>
+                    </div>
+                    
+                    <div class="review-comment">{{ review.comment }}</div>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="no-reviews">
+                <i class="bi bi-chat-square-text"></i>
+                <p>Bu ürün için henüz değerlendirme bulunmamaktadır.</p>
               </div>
             </div>
           </div>
@@ -308,8 +383,32 @@ const activeTab = ref("description");
 /*const handleImageError = (event) => {
   event.target.src = "/placeholder-image.jpg";
 };*/
+const addToFavorites = () => {
+  const productId = route.params.id;
+  apiClient.post("/favorites", {
+    productId: productId
+  }).then((response) => {
+    product.value.isFavorited = true;
+    $toast.success("Ürün favorilere eklendi", { duration: 1000 });
+  }).catch((error) => {
+    console.error(error);
+    $toast.error("Favorilere eklenirken bir hata oluştu.", { duration: 1000 }); 
+  });
+}
 
-// Fiyat formatı
+const removeFromFavorites = () => {
+  const productId = route.params.id;
+  apiClient.delete(`/favorites/${productId}`)
+    .then((response) => {
+      product.value.isFavorited = false;
+      $toast.error("Ürün favorilerden kaldırıldı", { duration: 1000 });
+    })
+    .catch((error) => {
+      console.error(error);
+      $toast.error("Favorilerden kaldırılırken bir hata oluştu.", { duration: 1000 });
+    });
+}
+
 const formatPrice = (price) => {
   return new Intl.NumberFormat("tr-TR", {
     style: "currency",
@@ -371,6 +470,23 @@ const filteredImages = computed(() => {
     image.url !== product.value.imageUrl
   );
 });
+
+const calculateAverageRating = () => {
+  if (!product.value || !product.value.reviews) return 0;
+  const totalRating = product.value.reviews.reduce((sum, review) => {
+    return sum + review.rating;
+  }, 0);
+  return (totalRating / product.value.reviews.length).toFixed(1);
+};
+
+const formatReviewDate = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("tr-TR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
 
 onMounted(() => {
   isLoading.value = true;
@@ -1104,6 +1220,124 @@ onMounted(() => {
 
 .no-specs p {
   font-size: 1.1rem;
+}
+
+.reviews-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+}
+
+.average-rating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.rating-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #ff7f00;
+  line-height: 1;
+}
+
+.rating-stars {
+  margin: 10px 0;
+  color: #ff9900;
+  font-size: 1.3rem;
+}
+
+.rating-count {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.review-item {
+  padding: 20px;
+  border-radius: 10px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-left: 4px solid #ff7f00;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.review-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.review-user i {
+  font-size: 1.3rem;
+  color: #666;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.review-date {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.review-rating {
+  margin-bottom: 12px;
+  color: #ff9900;
+  font-size: 1.1rem;
+}
+
+.review-comment {
+  color: #444;
+  line-height: 1.6;
+}
+
+.no-reviews {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  color: #777;
+  text-align: center;
+}
+
+.no-reviews i {
+  font-size: 2.5rem;
+  color: #ddd;
+  margin-bottom: 15px;
+}
+
+.no-reviews p {
+  font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+  .reviews-summary {
+    flex-direction: column;
+    padding: 15px;
+  }
+  
+  .review-item {
+    padding: 15px;
+  }
 }
 
 /* Responsive tasarım */

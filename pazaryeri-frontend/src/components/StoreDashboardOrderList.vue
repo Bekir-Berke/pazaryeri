@@ -73,9 +73,15 @@
             {{ formatDate(order.createdAt) }}
           </span>
         </div>
-        <div class="order-total">
-          <span class="total-label">Toplam:</span>
-          <span class="total-amount">{{ formatPrice(order.totalAmount) }}₺</span>
+        <div class="order-header-right">
+          <button @click="generateInvoice(order)" class="invoice-btn">
+            <i class="fa fa-file-invoice"></i>
+            Fatura Oluştur
+          </button>
+          <div class="order-total">
+            <span class="total-label">Toplam:</span>
+            <span class="total-amount">{{ formatPrice(order.totalAmount) }}₺</span>
+          </div>
         </div>
       </div>
 
@@ -99,7 +105,7 @@
             </div>
           </div>
 
-          <div class="info-section order-address">
+          <div v-if="order.address !== null"class="info-section order-address">
             <h4 class="section-title">
               <i class="fa fa-map-marker-alt"></i>
               Teslimat Adresi
@@ -108,6 +114,18 @@
               <p class="address-line">{{ order.address.fullAddress }}</p>
               <p class="address-detail">
                 {{ order.address.neighborhood }}, {{ order.address.district }}, {{ order.address.city }}
+              </p>
+            </div>
+          </div>
+          <div v-else class="info-section order-address">
+            <h4 class="section-title">
+              <i class="fa fa-map-marker-alt"></i>
+              Teslimat Adresi
+            </h4>
+            <div class="info-content">
+              <p class="address-line">{{ order.fullAddress }}</p>
+              <p class="address-detail">
+                {{ order.neighborhood }}, {{ order.district }}, {{ order.city }}
               </p>
             </div>
           </div>
@@ -139,7 +157,7 @@
                     <i class="fa fa-cubes"></i>
                     {{ item.quantity }} adet
                   </span>
-                  <span class="item-price">{{ formatPrice(item.price) }}₺</span>
+                  <span class="item-price">{{ formatPrice(item.vatPrice) }}₺</span>
                 </div>
 
                 <div class="item-status">
@@ -189,6 +207,7 @@ const selectedItem = ref(null)
 
 const OrderStatus = {
   PROCESSING: 'PROCESSING',
+  PENDING: 'PENDING',
   SHIPPED: 'SHIPPED',
   DELIVERED: 'DELIVERED',
   CANCELLED: 'CANCELLED'
@@ -289,6 +308,7 @@ function formatPrice(price) {
 // Update the statusText function to use the enum
 function statusText(status) {
   switch (status) {
+    case OrderStatus.PENDING: return 'Beklemede'
     case OrderStatus.PROCESSING: return 'Hazırlanıyor'
     case OrderStatus.SHIPPED: return 'Kargoda'
     case OrderStatus.DELIVERED: return 'Teslim Edildi'
@@ -306,6 +326,21 @@ function getStatusIcon(status) {
     case OrderStatus.CANCELLED: return 'fa-times-circle'
     default: return 'fa-circle-question'
   }
+}
+
+function generateInvoice(order) {
+  apiClient.post('/invoice', { orderId: order.id })
+    .then(response => {
+      if (response.data) {
+        console.log('Invoice generated:', response.data)
+        alert('Fatura oluşturuldu')
+      }
+    })
+    .catch(error => {
+      console.error('Error generating invoice:', error)
+      alert(error.response?.data?.message || 'Fatura oluşturulurken bir hata oluştu')
+    })
+  alert(`Fatura oluşturuluyor: Sipariş No #${order.orderNumber}`);
 }
 </script>
 
@@ -375,6 +410,35 @@ function getStatusIcon(status) {
   display: flex;
   align-items: center;
   gap: 1.5rem;
+}
+
+.order-header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.invoice-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.invoice-btn:hover {
+  background: #43a047;
+  transform: translateY(-2px);
+}
+
+.invoice-btn i {
+  font-size: 1rem;
 }
 
 .order-number-wrapper {
@@ -723,6 +787,17 @@ function getStatusIcon(status) {
     flex-direction: column;
     gap: 1rem;
     align-items: flex-start;
+  }
+
+  .order-header-right {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.75rem;
+  }
+
+  .invoice-btn {
+    width: 100%;
+    justify-content: center;
   }
 
   .order-total {

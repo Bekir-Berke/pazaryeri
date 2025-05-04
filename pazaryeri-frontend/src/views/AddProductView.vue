@@ -26,6 +26,91 @@
         </div>
       </div>
       
+      <!-- Vergi Oranı Girişi -->
+      <div class="form-group">
+        <label for="taxRate">Vergi Oranı (%) *</label>
+        <input 
+          type="number" 
+          id="taxRate" 
+          v-model="product.vatRate" 
+          step="0.01" 
+          min="0" 
+          max="100" 
+          placeholder="Örn: 18.00"
+          @blur="formatVatRate"
+          required 
+        />
+        <small class="form-hint">KDV oranını yüzde olarak giriniz (Örn: 18.00)</small>
+      </div>
+
+      <div class="total-price-display" v-if="product.price > 0 && product.vatRate > 0">
+        <span class="total-price-label">KDV Dahil Fiyat:</span>
+        <span class="total-price-value">{{ formatPriceWithTax(product.price, product.vatRate) }} TL</span>
+      </div>
+      
+      <!-- Varyant Ekleme Bölümü -->
+      <div class="form-group">
+        <h3>Ürün Varyantları</h3>
+        <p class="form-hint">Renk, beden, desen gibi farklı özelliklerde ürün seçenekleri ekleyebilirsiniz.</p>
+        
+        <div v-for="(variant, index) in product.variants" :key="index" class="variant-row">
+          <div class="variant-header">
+            <h4>Varyant #{{ index + 1 }}</h4>
+            <button type="button" @click="removeVariant(index)" class="remove-btn">Kaldır</button>
+          </div>
+          
+          <div class="variant-fields">
+            <div class="form-group">
+              <label :for="'variant-name-' + index">Varyant Adı *</label>
+              <input type="text" :id="'variant-name-' + index" v-model="variant.name" placeholder="Örn: Kırmızı, XL, 256GB" required />
+            </div>
+            
+            <div class="form-group">
+              <label :for="'variant-sku-' + index">Stok Kodu (SKU)</label>
+              <input type="text" :id="'variant-sku-' + index" v-model="variant.sku" placeholder="Varyanta özel stok kodu" />
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group half">
+                <label :for="'variant-price-' + index">Fiyat (TL)</label>
+                <input type="number" :id="'variant-price-' + index" v-model="variant.price" step="0.01" min="0" placeholder="Ana ürün fiyatından farklıysa" />
+                <small class="form-hint">Boş bırakırsanız ana ürün fiyatı kullanılır</small>
+              </div>
+              
+              <div class="form-group half">
+                <label :for="'variant-stock-' + index">Stok Miktarı *</label>
+                <input type="number" :id="'variant-stock-' + index" v-model="variant.stock" min="0" required />
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label :for="'variant-image-' + index">Varyant Görseli</label>
+              <div class="file-upload-container">
+                <label class="custom-file-upload">
+                  <input 
+                    type="file" 
+                    :id="'variant-image-' + index" 
+                    @change="handleVariantImageUpload($event, index)" 
+                    accept="image/*"
+                  />
+                  <span>Dosya Seçin</span>
+                </label>
+                <span class="file-name" v-if="variant.imagePreview">{{ getFileNameFromUrl(variant.imagePreview) }}</span>
+              </div>
+              
+              <div class="image-preview-small" v-if="variant.imagePreview">
+                <div class="preview-item-small">
+                  <img :src="variant.imagePreview" :alt="`Varyant ${index+1}`" />
+                  <button type="button" @click="removeVariantImage(index)" class="remove-image">X</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <button type="button" @click="addVariant" class="add-btn">Yeni Varyant Ekle</button>
+      </div>
+      
       <!-- Marka Seçimi -->
       <div class="form-group">
         <label for="brand">Marka *</label>
@@ -158,11 +243,13 @@ const product = ref({
   description: '',
   price: 0,
   stock: 0,
+  vatRate:18.00,
   brandId: null,
   categories: [{
     categoryId:null
   }],
   attributes: [],
+  variants: [],
   isActive: false,
   isFeature:false,
   sku: '',
@@ -173,7 +260,6 @@ const product = ref({
 const brands = ref([]);
 const allCategories = ref([]);
 const leafCategories = computed(() => {
-  // Flatten the category hierarchy to get all level 2 categories
   const result = [];
   
   if (allCategories.value.length) {
@@ -199,6 +285,19 @@ const leafCategories = computed(() => {
 const imagePreviewUrls = ref([]);
 const isSubmitting = ref(false);
 const selectedFiles = ref([]);
+
+function calculateTotalPrice() {
+  return;
+}
+
+function formatPriceWithTax(price, taxRate) {
+  if (!price || !taxRate) return "0.00";
+  
+  const taxAmount = (parseFloat(price) * parseFloat(taxRate)) / 100;
+  const totalPrice = parseFloat(price) + taxAmount;
+  
+  return totalPrice.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+}
 
 onMounted(() => {
   apiClient.get('/brand').then(response => {
@@ -259,6 +358,62 @@ function addMoreImages() {
   }
 }
 
+function formatVatRate() {
+  if (product.value.vatRate) {
+    product.value.vatRate = parseFloat(product.value.vatRate).toFixed(2);
+  }
+}
+
+function addVariant() {
+  product.value.variants.push({
+    name: '',
+    sku: '',
+    price: null,
+    stock: 0,
+    imageFile: null,
+    imagePreview: null
+  });
+}
+
+function removeVariant(index) {
+  // Varyant görselinin URL nesnesini temizle (bellek sızıntısını önlemek için)
+  if (product.value.variants[index].imagePreview) {
+    URL.revokeObjectURL(product.value.variants[index].imagePreview);
+  }
+  
+  product.value.variants.splice(index, 1);
+}
+
+function handleVariantImageUpload(event, variantIndex) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  // Önceki görsel URL'sini temizle
+  if (product.value.variants[variantIndex].imagePreview) {
+    URL.revokeObjectURL(product.value.variants[variantIndex].imagePreview);
+  }
+  
+  // Yeni dosyayı kaydet ve önizleme URL'i oluştur
+  product.value.variants[variantIndex].imageFile = file;
+  product.value.variants[variantIndex].imagePreview = URL.createObjectURL(file);
+}
+
+function removeVariantImage(variantIndex) {
+  // URL'yi temizle
+  if (product.value.variants[variantIndex].imagePreview) {
+    URL.revokeObjectURL(product.value.variants[variantIndex].imagePreview);
+  }
+  
+  // Görsel verilerini temizle
+  product.value.variants[variantIndex].imageFile = null;
+  product.value.variants[variantIndex].imagePreview = null;
+}
+
+function getFileNameFromUrl(url) {
+  // URL'den dosya adını çıkarmaya çalış, olmuyorsa "Seçilen dosya" döndür
+  return url ? "Seçilen dosya" : "";
+}
+
 function submitProduct() {
   if (selectedFiles.value.length === 0) {
     alert("Lütfen en az bir ürün görseli ekleyin.");
@@ -272,8 +427,12 @@ function submitProduct() {
   
   // Ürün bilgilerini ekle
   Object.keys(product.value).forEach(key => {
-    if (key !== 'attributes' && key !== 'categories') {
-      formData.append(key, product.value[key]);
+    if (key !== 'attributes' && key !== 'categories' && key !== 'variants') {
+      if (key === 'vatRate') {
+        formData.append(key, parseFloat(product.value[key]).toFixed(2));
+      } else {
+        formData.append(key, product.value[key]);
+      }
     }
   });
   
@@ -283,6 +442,27 @@ function submitProduct() {
   
   // Özellikleri JSON string olarak ekle
   formData.append('attributes', JSON.stringify(product.value.attributes));
+  
+  // Varyantları formData'ya ekle
+  // Önce görsel dosyaları olmadan varyant verilerini hazırla
+  const variants = product.value.variants.map((variant, index) => {
+    const variantData = {
+      name: variant.name,
+      sku: variant.sku || null,
+      price: variant.price || null,
+      stock: variant.stock
+    };
+    return variantData;
+  });
+  
+  formData.append('variants', JSON.stringify(variants));
+  
+  // Varyant görsellerini ayrı ayrı ekle
+  product.value.variants.forEach((variant, index) => {
+    if (variant.imageFile) {
+      formData.append(`variant-image`, variant.imageFile);
+    }
+  });
   
   // Görselleri ekle
   selectedFiles.value.forEach(file => {
@@ -315,6 +495,32 @@ function getCategoryPath(category) {
 </script>
 
 <style scoped>
+.total-price-display {
+  margin-top: 0.8rem;
+  padding: 0.6rem;
+  background-color: #f0f7ff;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-price-label {
+  font-weight: 500;
+  color: #555;
+}
+
+.total-price-value {
+  font-weight: 600;
+  color: #4a90e2;
+  font-size: 1.05rem;
+}
+
+.form-hint {
+  font-size: 0.8rem;
+  color: #777;
+  margin-top: 0.3rem;
+}
 .add-product-container {
   max-width: 1000px;
   margin: 0 auto;
@@ -529,6 +735,63 @@ textarea {
 .remove-image:hover {
   background-color: rgba(255, 255, 255, 0.9);
   transform: scale(1.1);
+}
+
+.image-preview-small {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.preview-item-small {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.preview-item-small img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.file-name {
+  color: #555;
+  font-size: 0.9rem;
+  margin-left: 0.5rem;
+}
+
+/* Varyant stili */
+.variant-row {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background-color: #f9f9f9;
+}
+
+.variant-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #eee;
+}
+
+.variant-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #444;
+}
+
+.variant-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .form-actions {

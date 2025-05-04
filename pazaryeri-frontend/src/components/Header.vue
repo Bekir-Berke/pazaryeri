@@ -10,8 +10,14 @@
           </div>
           
           <div class="search-container">
-            <input class="search-input" type="text" placeholder="ürün adı giriniz">
-            <button class="search-button">
+            <input 
+              class="search-input" 
+              type="text" 
+              placeholder="ürün adı giriniz"
+              v-model="searchQuery"
+              @keyup.enter="performSearch"
+            >
+            <button class="search-button" @click="performSearch">
               <i class="bi bi-search"></i>
             </button>
           </div>
@@ -19,7 +25,7 @@
           <nav class="user-nav">
             <div v-if="!session.loggedIn">
               <div class="seller-link-container">
-                <router-link to="/store" class="btn-seller">
+                <router-link to="/store-page" class="btn-seller">
                   <i class="bi bi-shop me-1"></i>Pazaryerinde Satış Yap
                 </router-link>
               </div>
@@ -34,7 +40,7 @@
             </div>
             <div v-else>
               <div class="seller-link-container">
-                <router-link to="/store" class="btn-seller">
+                <router-link to="/store-application" class="btn-seller">
                   <i class="bi bi-shop me-1"></i>Pazaryerinde Satış Yap
                 </router-link>
               </div>
@@ -73,25 +79,38 @@
 
 <script setup>
 import { onMounted, ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import CategoryHeader from './CategoryHeader.vue';
 import { useCategoryStore } from '@/stores/counter'
 import { useLoggedInStore } from '@/stores/counter';
 import { useCartStore } from '@/stores/counter';
 import { BDropdown, BDropdownItem, BDropdownDivider } from 'bootstrap-vue-next';
 import apiClient from '@/api';
-const session = defineProps(['loggedIn', 'cartCount'])
+
+const router = useRouter();
+const searchQuery = ref('');
+const session = defineProps(['loggedIn', 'cartCount']);
 const loginStore = useLoggedInStore();
 const cartStore = useCartStore();
+
+const performSearch = () => {
+  if (searchQuery.value.trim()) {
+    router.push({
+      path: '/search',
+      query: { q: searchQuery.value.trim() }
+    });
+  }
+};
 
 const handleLogout = () => {
   apiClient.post('/auth/logout', {}).then(() => {
     loginStore.logout();
   });
 };
+
 const cartCount = computed(() => {
   return cartStore.cart.map(item => item.quantity).reduce((a, b) => a + b, 0);
 });
-
 </script>
 
 <style scoped>

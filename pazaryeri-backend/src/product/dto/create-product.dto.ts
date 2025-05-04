@@ -32,6 +32,11 @@ export class CreateProductDto {
   @Type(() => parseFloat)
   price: number; // Decimal türü için string olarak alıp Prisma'da dönüştüreceğiz
 
+  @IsNotEmpty({ message: 'KDV oranı zorunludur' })
+  @IsDecimal({ decimal_digits: '0,2' }, { message: 'Geçerli bir KDV oranı giriniz (ör: 18.00)' })
+  @Type(() => parseFloat)
+  vatRate: number;
+
   @IsNotEmpty({ message: 'Marka ID zorunludur' })
   @IsUUID('all', { message: 'Geçerli bir marka ID giriniz' })
   brandId: string;

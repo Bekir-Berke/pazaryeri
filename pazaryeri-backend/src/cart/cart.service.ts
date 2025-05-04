@@ -37,7 +37,7 @@ export class CartService {
       throw new Error('Cart not found');
     }
     
-    let price:any = product.price;
+    let price:any = product.vatPrice;
     let variantId = addToCartDto.variantId || null;
     
     if (variantId) {
@@ -52,8 +52,8 @@ export class CartService {
         throw new Error('Variant not found for this product');
       }
       
-      if (variant.price !== null && variant.price !== undefined) {
-        price = variant.price;
+      if (variant.vatPrice !== null && variant.vatPrice !== undefined) {
+        price = variant.vatPrice;
       }
       
       if (variant.stock < addToCartDto.quantity) {

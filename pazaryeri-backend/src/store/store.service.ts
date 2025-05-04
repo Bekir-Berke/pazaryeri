@@ -9,7 +9,7 @@ export class StoreService {
   constructor(private prisma: PrismaService) { }
   create(createStoreDto: CreateStoreDto) {
     createStoreDto.password = bcrypt.hashSync(createStoreDto.password, 10);
-    return this.prisma.store.create({ data: { ...createStoreDto, status: 'APPROVED' } });
+    return this.prisma.store.create({ data: { ...createStoreDto, status: 'PENDING' } });
   }
   findAll() {
     return this.prisma.store.findMany({ include: { companyType: true, products: true } });
@@ -24,6 +24,7 @@ export class StoreService {
           address: true,
           email: true,
           iban: true,
+          status:true,
           ownerFirstName: true,
           ownerLastName: true,
           ownerEmail: true,
@@ -32,6 +33,7 @@ export class StoreService {
           taxNumber: true,
           taxOffice: true,
           companyName: true,
+          createdAt: true,
           companyType: {
             select: {
               id: true,
@@ -79,7 +81,7 @@ export class StoreService {
           select:{
             id:true,
             name:true,
-            price:true,
+            vatPrice:true,
             imageUrl:true
           }
         }
@@ -95,7 +97,10 @@ export class StoreService {
   }
 
   remove(id: string) {
-    return this.prisma.store.delete({ where: { id } });
+    return this.prisma.store.update({
+      where: { id },
+      data: { deletedAt: new Date() }
+    })
   }
 
   async findStoreOrders(storeId: string) {
