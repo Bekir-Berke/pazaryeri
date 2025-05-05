@@ -9,7 +9,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "80:80"
+      - "81:81"
   
   backend:
     build:
@@ -31,7 +31,7 @@ services:
       - CLOUDFLARE_R2_ACCOUNT_ID=${CLOUDFLARE_R2_ACCOUNT_ID}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
-      - CORS_ORIGINS=http://localhost,http://localhost:80,http://localhost:5173,https://pazaryeri.bekirberke.tr
+      - CORS_ORIGINS=http://localhost,http://localhost:81,http://localhost:5173,https://pazaryeri.bekirberke.tr
     volumes:
       - ./pazaryeri-backend:/app
     ports:
