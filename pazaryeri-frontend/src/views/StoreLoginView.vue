@@ -77,6 +77,7 @@
   import { useRouter } from 'vue-router';
   import apiClient from '@/api';
   import Swal from 'sweetalert2';
+import { useLoggedInStore } from '@/stores/counter';
   
   const router = useRouter();
   const email = ref('');
@@ -133,6 +134,7 @@
           showConfirmButton: false,
           timer: 1500
         }).then(() => {
+          useLoggedInStore().setRole('STORE');
           router.push('/store/dashboard');
         });
       });

@@ -11,6 +11,8 @@ onMounted(() => {
     if (response.data.success === true) {
       loginStore.login();
       loginStore.setRole(response.data.role);
+      sessionStorage.setItem("role", response.data.role);
+      sessionStorage.setItem("loggedIn", true);
       apiClient.get("/cart").then((response) => {
         if (response.data) {
           cartStore.initCart(response.data);

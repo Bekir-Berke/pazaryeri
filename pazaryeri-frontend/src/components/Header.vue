@@ -105,6 +105,7 @@ const performSearch = () => {
 const handleLogout = () => {
   apiClient.post('/auth/logout', {}).then(() => {
     loginStore.logout();
+    loginStore.setRole(null);
   });
 };
 

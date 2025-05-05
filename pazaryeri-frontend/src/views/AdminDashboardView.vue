@@ -168,6 +168,7 @@ import AdminOrders from '@/components/AdminOrders.vue';
 import AdminStoreApplications from "@/components/AdminStoreApplications.vue";
 import AdminBrands from '@/components/AdminBrands.vue';
 import AdminInvoices from '@/components/AdminInvoices.vue';
+import { useLoggedInStore } from '@/stores/counter';
 
 const router = useRouter();
 const sidebarOpen = ref(window.innerWidth >= 992);
@@ -273,7 +274,7 @@ const logout = () => {
       apiClient
           .post('/auth/admin-logout')
           .then(() => {
-            localStorage.removeItem('token');
+            useLoggedInStore().setRole(null);
             Swal.fire({
               icon: 'success',
               title: 'Başarıyla çıkış yaptınız.',

@@ -50,6 +50,7 @@ import Swal from "sweetalert2";
 import Dashbooard from "@/components/Dashbooard.vue";
 import StoreDashboardProductList from "@/components/StoreDashboardProductList.vue";
 import StoreDashboardOrderList from "@/components/StoreDashboardOrderList.vue";
+import { useLoggedInStore } from "@/stores/counter";
 
 const storeData = ref(null);
 const pages = ref("dashboard");
@@ -58,6 +59,8 @@ const logout = () => {
   apiClient
     .post("/auth/store-logout")
     .then(() => {
+      useLoggedInStore().setRole(null);
+      useLoggedInStore().logout();
       Swal.fire({
         icon: "success",
         title: "Başarıyla çıkış yaptınız.",

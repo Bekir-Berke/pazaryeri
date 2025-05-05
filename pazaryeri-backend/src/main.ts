@@ -14,7 +14,10 @@ async function bootstrap() {
     forbidNonWhitelisted:true
   }));
   app.use(cookieParser());
-  app.enableCors({origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173', credentials: true});
+  const corsOrigins = process.env.CORS_ORIGINS 
+  ? process.env.CORS_ORIGINS.split(',') 
+  : ['http://localhost:5173', 'http://localhost', 'http://localhost:80'];
+  app.enableCors({origin: corsOrigins, credentials: true});
   const config = new DocumentBuilder()
   .setTitle('Pazaryeri backend')
   .setDescription('Pazaryeri backend API')

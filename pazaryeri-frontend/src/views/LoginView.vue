@@ -157,6 +157,7 @@ const login = () => {
       timer: 2000,
     }).then(() => {
       loginStore.login();
+      loginStore.setRole('USER');
       router.push('/');
     })
   }).catch(error => {

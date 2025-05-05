@@ -5,7 +5,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { StoreLoginDto } from './dto/store-login.dto';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { RedisService } from 'src/redis/redis.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { th } from '@faker-js/faker';
@@ -16,6 +16,7 @@ export class AuthService {
     async login(loginDto: LoginDto) {
         try {
             const user = await this.usersService.findOneByEmail(loginDto.email);
+            console.log(user);
 
             if (!user) {
                 throw new NotFoundException('Kullanıcı bulunamadı');
@@ -24,6 +25,7 @@ export class AuthService {
                 throw new NotFoundException('Kullanıcı bulunamadı');
             }
             const isMatch = bcrypt.compareSync(loginDto.passwordHash, user.passwordHash);
+            console.log(isMatch);
             if(!isMatch) {
                 throw new UnauthorizedException('Kullanıcı adı veya şifre hatalı');
             }

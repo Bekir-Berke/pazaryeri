@@ -7,7 +7,6 @@ import NotFound from '@/views/NotFound.vue'
 import CartView from '@/views/CartView.vue'
 import CategoryView from '@/views/CategoryView.vue'
 import AccountView from '@/views/AccountView.vue'
-import { useLoggedInStore } from '@/stores/counter'
 import StorePageView from '@/views/StorePageView.vue'
 import StoreApplicationView from '@/views/StoreApplicationView.vue'
 import StoreLoginView from '@/views/StoreLoginView.vue'
@@ -171,14 +170,4 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes
 })
-router.beforeEach((to, from, next) => {
-  const loggedInStore = useLoggedInStore();
-  const isLoggedIn = loggedInStore.loggedIn;
-  const userRole = loggedInStore.role;
-    if (to.meta.roles && !to.meta.roles.includes(userRole)) {
-      next({ name: 'forbidden' });
-    } else {
-      next();
-    }
-});
 export default router
