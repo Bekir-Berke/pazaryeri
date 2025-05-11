@@ -67,6 +67,7 @@ export class UsersService {
         where:{deletedAt:null},
       },
       orders:{
+        where:{deletedAt:null},
         select:{
           id:true,
           createdAt:true,
@@ -89,6 +90,7 @@ export class UsersService {
                   createdAt:true,
                   comment:true,
                   rating:true,
+                  imageUrls:true
                 }
               },
               status:true,
@@ -114,6 +116,12 @@ export class UsersService {
         }
       },
       favorites:{
+       where:{
+        product:{
+          deletedAt:null,
+          isActive:true,
+        }
+       },
         select:{
           id:true,
           product:{

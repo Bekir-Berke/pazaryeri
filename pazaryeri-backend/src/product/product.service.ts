@@ -260,6 +260,7 @@ export class ProductService {
         include: {
           images: true,
           attributes: true,
+          brand:true,
           variants: {
             select: {
               id: true,
@@ -292,6 +293,7 @@ export class ProductService {
                   id: true,
                   rating: true,
                   comment: true,
+                  imageUrls: true,
                   createdAt: true,
                   user: {
                     select: {
@@ -307,7 +309,7 @@ export class ProductService {
       });
       
       if (!product) return null;
-      
+      if(product.isActive === false || product.deletedAt !== null) return null;
       let isFavorited = false;
       if(userID){
         const favorite = await this.prisma.favorite.findFirst({
@@ -343,9 +345,30 @@ export class ProductService {
   async update(id: string, updateProductDto: UpdateProductDto) {
     console.log('updateProductDto', updateProductDto);
     try {
-      const { price, vatRate, ...restData } = updateProductDto;
+      const { price, vatRate, attributes, ...restData } = updateProductDto;
       
       let dataToUpdate: any = { ...restData };
+      
+      // Handle attributes if they exist
+      if (attributes) {
+        // Parse attributes if they're a string (from FormData)
+        const parsedAttributes = typeof attributes === 'string' 
+          ? JSON.parse(attributes)
+          : attributes;
+          
+        // First delete existing attributes
+        await this.prisma.productAttribute.deleteMany({
+          where: { productId: id }
+        });
+        
+        // Then add attributes in Prisma's expected format
+        dataToUpdate.attributes = {
+          create: parsedAttributes.map(attr => ({
+            name: attr.name,
+            value: attr.value
+          }))
+        };
+      }
       
       if (price !== undefined && vatRate !== undefined) {
         const parsedPrice = parseFloat(price.toString());
@@ -399,7 +422,9 @@ export class ProductService {
       
       return this.prisma.product.update({
         where: { id },
-        data: dataToUpdate,
+        data: {
+          ...dataToUpdate,
+        },
         include: {
           images: true,
           attributes: true,

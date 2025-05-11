@@ -1,170 +1,218 @@
 <template>
-  <div class="orders-container">
-    <h2 class="orders-title">Siparişlerim</h2>
-    
-    <div v-if="!orders || orders.length === 0" class="no-orders">
-      <p>Henüz siparişiniz bulunmamaktadır.</p>
-    </div>
-    
-    <div v-else class="orders-list">
-      <div v-for="order in orders" :key="order.id" class="order-card">
-        <div class="order-header">
-          <div class="order-info">
-            <h3 class="order-number">Sipariş #{{ order.orderNumber }}</h3>
-            <span class="order-date">{{ formatDate(order.createdAt) }}</span>
+  <div>
+    <div class="orders-container">
+      <h2 class="orders-title">Siparişlerim</h2>
+
+      <div v-if="!orders || orders.length === 0" class="no-orders">
+        <p>Henüz siparişiniz bulunmamaktadır.</p>
+      </div>
+
+      <div v-else class="orders-list">
+        <div v-for="order in orders" :key="order.id" class="order-card">
+          <div class="order-header">
+            <div class="order-info">
+              <h3 class="order-number">Sipariş #{{ order.orderNumber }}</h3>
+              <span class="order-date">{{ formatDate(order.createdAt) }}</span>
+            </div>
+            <div class="order-status" :class="getStatusClass(order.status)">
+              {{ translateStatus(order.status) }}
+            </div>
           </div>
-          <div class="order-status" :class="getStatusClass(order.status)">
-            {{ translateStatus(order.status) }}
+
+          <div class="order-items">
+            <div v-for="item in order.items" :key="item.id" class="order-item">
+              <div class="item-image">
+                <img
+                  v-if="item.product.imageUrl"
+                  :src="item.product.imageUrl"
+                  :alt="item.product.name"
+                />
+                <div v-else class="no-image">Görsel Yok</div>
+              </div>
+              <div class="item-details">
+                <h4 class="item-name">{{ item.product.name }}</h4>
+                <p v-if="item.variant" class="item-variant">
+                  <span class="variant-label">Varyant:</span>
+                  {{ item.variant.name }}
+                </p>
+                <p class="item-store">Satıcı: {{ item.product.store.name }}</p>
+                <p class="item-price">
+                  {{
+                    formatPrice(
+                      item.variant ? item.variant.vatPrice : item.vatPrice
+                    )
+                  }}
+                </p>
+                <button
+                  v-if="canBeReviewed(item.status, item.Review)"
+                  @click="openReviewModal(item)"
+                  class="btn-review"
+                >
+                  {{ item.reviewed ? "Değerlendirmeyi Düzenle" : "Değerlendir" }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="order-footer">
+            <div class="order-total">
+              <span>Toplam:</span>
+              <span class="total-amount">{{
+                formatPrice(order.totalAmount)
+              }}</span>
+            </div>
+            <router-link :to="{ name: 'order', params: { id: order.id } }">
+              <button class="btn-details">Detayları Görüntüle</button>
+            </router-link>
           </div>
         </div>
-        
-        <div class="order-items">
-          <div v-for="item in order.items" :key="item.id" class="order-item">
-            <div class="item-image">
-              <img 
-                v-if="item.product.imageUrl" 
-                :src="item.product.imageUrl" 
-                :alt="item.product.name"
-              >
-              <div v-else class="no-image">Görsel Yok</div>
-            </div>
-            <div class="item-details">
-              <h4 class="item-name">{{ item.product.name }}</h4>
-              <p v-if="item.variant" class="item-variant">
-                <span class="variant-label">Varyant:</span>
-                {{ item.variant.name }}
-              </p>
-              <p class="item-store">Satıcı: {{ item.product.store.name }}</p>
-              <p class="item-price">
-                {{ formatPrice(item.variant ? item.variant.vatPrice : item.vatPrice) }}
-              </p>
-              <button 
-                v-if="canBeReviewed(item.status, item.Review)"
-                @click="openReviewModal(item)" 
-                class="btn-review"
-              >
-                {{ item.reviewed ? 'Değerlendirmeyi Düzenle' : 'Değerlendir' }}
+      </div>
+    </div>
+
+    <!-- Değerlendirme modal penceresi -->
+    <div v-if="showReviewModal" class="review-modal-overlay">
+      <div class="review-modal">
+        <h3>Ürün Değerlendirmesi</h3>
+        <div v-if="currentItem" class="review-product-info">
+          <img
+            v-if="currentItem.product.imageUrl"
+            :src="currentItem.product.imageUrl"
+            :alt="currentItem.product.name"
+          />
+          <div v-else class="no-image">Görsel Yok</div>
+          <div class="product-info">
+            <h4>{{ currentItem.product.name }}</h4>
+            <p v-if="currentItem.variant">
+              Varyant: {{ currentItem.variant.name }}
+            </p>
+          </div>
+        </div>
+
+        <div class="rating-select">
+          <p>Puanınız:</p>
+          <div class="stars">
+            <span
+              v-for="i in 5"
+              :key="i"
+              @click="selectedRating = i"
+              :class="{ 'star-selected': i <= selectedRating }"
+              class="star"
+              >★</span
+            >
+          </div>
+        </div>
+
+        <div class="review-comment">
+          <p>Yorumunuz:</p>
+          <textarea
+            v-model="reviewComment"
+            placeholder="Bu ürün hakkındaki düşüncelerinizi paylaşın..."
+            rows="4"
+          ></textarea>
+        </div>
+
+        <div class="review-images">
+          <p>Fotoğraf Ekleyin (İsteğe Bağlı):</p>
+          <div class="image-upload-container">
+            <label for="image-upload" class="image-upload-label">
+              <i class="bi bi-camera"></i> Fotoğraf Seç
+            </label>
+            <input 
+              type="file" 
+              id="image-upload" 
+              accept="image/*" 
+              multiple 
+              @change="handleFileChange" 
+              class="image-upload-input"
+            >
+            <small class="image-hint">En fazla 5 fotoğraf ekleyebilirsiniz</small>
+          </div>
+          
+          <div v-if="selectedFiles.length > 0" class="image-previews">
+            <div v-for="(file, index) in selectedFiles" :key="index" class="image-preview-item">
+              <img :src="previewUrls[index]" :alt="file.name" class="preview-image">
+              <button @click="removeImage(index)" class="remove-image-btn">
+                <i class="bi bi-x"></i>
               </button>
             </div>
           </div>
         </div>
-        
-        <div class="order-footer">
-          <div class="order-total">
-            <span>Toplam:</span>
-            <span class="total-amount">{{ formatPrice(order.totalAmount) }}</span>
-          </div>
-          <router-link :to="{ name: 'order', params: { id: order.id } }">
-            <button class="btn-details">Detayları Görüntüle</button>
-          </router-link>
+
+        <div class="modal-actions">
+          <button
+            @click="
+              showReviewModal = false;
+              currentItem = null;
+            "
+            class="btn-cancel"
+          >
+            İptal
+          </button>
+          <button
+            @click="submitReview(selectedRating, reviewComment, selectedFiles)"
+            :disabled="!selectedRating"
+            class="btn-submit"
+          >
+            Gönder
+          </button>
         </div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Değerlendirme modal penceresi -->
-  <div v-if="showReviewModal" class="review-modal-overlay">
-    <div class="review-modal">
-      <h3>Ürün Değerlendirmesi</h3>
-      <div v-if="currentItem" class="review-product-info">
-        <img 
-          v-if="currentItem.product.imageUrl" 
-          :src="currentItem.product.imageUrl" 
-          :alt="currentItem.product.name"
-        >
-        <div v-else class="no-image">Görsel Yok</div>
-        <div class="product-info">
-          <h4>{{ currentItem.product.name }}</h4>
-          <p v-if="currentItem.variant">Varyant: {{ currentItem.variant.name }}</p>
-        </div>
-      </div>
-      
-      <div class="rating-select">
-        <p>Puanınız:</p>
-        <div class="stars">
-          <span 
-            v-for="i in 5" 
-            :key="i" 
-            @click="selectedRating = i"
-            :class="{'star-selected': i <= selectedRating}"
-            class="star"
-          >★</span>
-        </div>
-      </div>
-      
-      <div class="review-comment">
-        <p>Yorumunuz:</p>
-        <textarea 
-          v-model="reviewComment" 
-          placeholder="Bu ürün hakkındaki düşüncelerinizi paylaşın..."
-          rows="4"
-        ></textarea>
-      </div>
-      
-      <div class="modal-actions">
-        <button @click="showReviewModal = false; currentItem = null;" class="btn-cancel">İptal</button>
-        <button 
-          @click="submitReview(selectedRating, reviewComment)" 
-          :disabled="!selectedRating" 
-          class="btn-submit"
-        >
-          Gönder
-        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import apiClient from '@/api';
-import Swal from 'sweetalert2';
-import { defineModel, ref } from 'vue';
+import apiClient from "@/api";
+import Swal from "sweetalert2";
+import { defineModel, ref } from "vue";
 
 const orders = defineModel();
 const showReviewModal = ref(false);
 const currentItem = ref(null);
 const selectedRating = ref(0);
-const reviewComment = ref('');
+const reviewComment = ref("");
+const selectedFiles = ref([]);
+const previewUrls = ref([]);
 
 const formatDate = (dateString) => {
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat('tr-TR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+  return new Intl.DateTimeFormat("tr-TR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(date);
 };
 
 const formatPrice = (price) => {
-  return new Intl.NumberFormat('tr-TR', {
-    style: 'currency',
-    currency: 'TRY'
+  return new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: "TRY",
   }).format(price);
 };
 
 const translateStatus = (status) => {
   const statusMap = {
-    'PROCESSING': 'İşleniyor',
-    'SHIPPED': 'Kargoya Verildi',
-    'DELIVERED': 'Teslim Edildi',
-    'CANCELLED': 'İptal Edildi'
+    PROCESSING: "İşleniyor",
+    SHIPPED: "Kargoya Verildi",
+    DELIVERED: "Teslim Edildi",
+    CANCELLED: "İptal Edildi",
   };
   return statusMap[status] || status;
 };
 
 const getStatusClass = (status) => {
   return {
-    'status-processing': status === 'PROCESSING',
-    'status-shipped': status === 'SHIPPED',
-    'status-delivered': status === 'DELIVERED',
-    'status-cancelled': status === 'CANCELLED'
+    "status-processing": status === "PROCESSING",
+    "status-shipped": status === "SHIPPED",
+    "status-delivered": status === "DELIVERED",
+    "status-cancelled": status === "CANCELLED",
   };
 };
 
 const canBeReviewed = (orderStatus, isReviewed) => {
-  return orderStatus === 'DELIVERED' && !isReviewed;
+  return orderStatus === "DELIVERED" && !isReviewed;
 };
 
 const openReviewModal = (item) => {
@@ -172,36 +220,62 @@ const openReviewModal = (item) => {
   showReviewModal.value = true;
 };
 
-const submitReview = async (rating, comment) => {
+const submitReview = async (rating, comment, files) => {
   try {
-    apiClient.post('review',{
-      orderItemId: currentItem.value.id,
-      rating,
-      comment
+    const formData = new FormData();
+    formData.append("rating", rating);
+    formData.append("comment", comment);
+    formData.append("orderItemId", currentItem.value.id);
+    for (const file of files) {
+      formData.append("images", file);
+    }
+
+    await apiClient.post("/review", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     });
-    
     // Başarılı olursa, öğeyi güncelle
     currentItem.value.reviewed = true;
-    
+
     // Modalı kapat
     showReviewModal.value = false;
     currentItem.value = null;
 
     Swal.fire({
-      icon: 'success',
-      title: 'Başarılı',
-      text: 'Değerlendirmeniz başarıyla gönderildi.',
-      confirmButtonText: 'Tamam'
+      icon: "success",
+      title: "Başarılı",
+      text: "Değerlendirmeniz başarıyla gönderildi.",
+      confirmButtonText: "Tamam",
     });
   } catch (error) {
     Swal.fire({
-      icon: 'error',
-      title: 'Hata',
-      text: 'Değerlendirme gönderilirken bir hata oluştu. Lütfen tekrar deneyin.',
-      confirmButtonText: 'Tamam'
+      icon: "error",
+      title: "Hata",
+      text: "Değerlendirme gönderilirken bir hata oluştu. Lütfen tekrar deneyin.",
+      confirmButtonText: "Tamam",
     });
-    console.error('Review submission error:', error);
+    console.error("Review submission error:", error);
   }
+};
+
+const handleFileChange = (event) => {
+  const files = event.target.files;
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const url = e.target.result;
+      selectedFiles.value.push(file);
+      previewUrls.value.push(url);
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
+const removeImage = (index) => {
+  selectedFiles.value.splice(index, 1);
+  previewUrls.value.splice(index, 1);
 };
 </script>
 
@@ -210,7 +284,7 @@ const submitReview = async (rating, comment) => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 1rem 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .orders-title {
@@ -494,7 +568,8 @@ const submitReview = async (rating, comment) => {
   transition: color 0.2s;
 }
 
-.star:hover, .star-selected {
+.star:hover,
+.star-selected {
   color: #ff9900;
 }
 
@@ -505,6 +580,56 @@ const submitReview = async (rating, comment) => {
   border-radius: 4px;
   resize: vertical;
   font-family: inherit;
+}
+
+.review-images {
+  margin-bottom: 1.5rem;
+}
+
+.image-upload-container {
+  margin-bottom: 0.5rem;
+}
+
+.image-upload-label {
+  padding: 0.6rem 1rem;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.image-upload-input {
+  display: none;
+}
+
+.image-hint {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.image-previews {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.image-preview-item {
+  position: relative;
+}
+
+.preview-image {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
 }
 
 .modal-actions {
@@ -542,16 +667,16 @@ const submitReview = async (rating, comment) => {
     align-items: flex-start;
     gap: 0.5rem;
   }
-  
+
   .order-status {
     align-self: flex-start;
   }
-  
+
   .order-footer {
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .btn-details {
     width: 100%;
   }

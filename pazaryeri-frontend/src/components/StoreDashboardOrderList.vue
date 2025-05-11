@@ -105,7 +105,7 @@
             </div>
           </div>
 
-          <div v-if="order.address !== null"class="info-section order-address">
+          <div v-if="order.address !== null" class="info-section order-address">
             <h4 class="section-title">
               <i class="fa fa-map-marker-alt"></i>
               Teslimat Adresi
@@ -136,6 +136,21 @@
             <i class="fa fa-box"></i>
             Sipariş İçeriği
           </h4>
+
+          <!-- Kupon Bilgisi -->
+          <div v-if="order.Coupon" class="coupon-section">
+            <div class="coupon-badge">
+              <i class="fa fa-tag"></i>
+              <span class="coupon-code">{{ order.Coupon.code }}</span>
+              <span class="coupon-value">
+                {{ order.Coupon.type === 'PERCENTAGE' ? `%${order.Coupon.value}` : `${formatPrice(order.Coupon.value)}₺` }}
+                {{ order.Coupon.type === 'PERCENTAGE' ? 'İndirim' : order.Coupon.type === 'FIXED_AMOUNT' ? 'İndirim' : 'Ücretsiz Kargo' }}
+              </span>
+            </div>
+            <div class="coupon-description" v-if="order.Coupon.description">
+              {{ order.Coupon.description }}
+            </div>
+          </div>
 
           <div class="order-items">
             <div v-for="item in order.items" :key="item.id" class="order-item">
@@ -538,6 +553,46 @@ function generateInvoice(order) {
   margin-top: 2rem;
   padding-top: 1.5rem;
   border-top: 1px solid #e8eaf6;
+}
+
+/* Kupon stili */
+.coupon-section {
+  background: #fff8e1;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-left: 3px solid #ffc107;
+}
+
+.coupon-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.coupon-badge i {
+  color: #ff9800;
+}
+
+.coupon-code {
+  font-weight: 600;
+  color: #f57c00;
+  background: rgba(255, 152, 0, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.coupon-value {
+  font-weight: 600;
+  color: #1a237e;
+}
+
+.coupon-description {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #666;
+  font-style: italic;
 }
 
 .order-items {

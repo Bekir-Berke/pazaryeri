@@ -67,11 +67,11 @@ export class InvoiceService {
       }
   
       const storeItemsTotal = order.items.reduce((total, item) => {
-        return total + (Number(item.product.vatPrice) * item.quantity);
+        return total + (Number(item.vatPrice) * item.quantity);
       }, 0);
   
       const taxAmount = order.items.reduce((total, item) => {
-        return total + (Number(item.product.price) * Number(item.product.vatRate) / 100 * item.quantity);
+        return total + (Number(item.price) * Number(item.vatRate) / 100 * item.quantity);
       }, 0)
       const invoiceNumber = await this.redisService.generateInvoiceNumber();
       
@@ -90,9 +90,9 @@ export class InvoiceService {
             create: order.items.map((item) => ({
               unitPrice: item.price,
               quantity: item.quantity,
-              totalPrice: Number(item.product.vatPrice) * item.quantity,
-              taxAmount: Number(item.product.price) * Number(item.product.vatRate) / 100 * item.quantity,
-              vatRate:item.product.vatRate,
+              totalPrice: Number(item.vatPrice) * item.quantity,
+              taxAmount: Number(item.price) * Number(item.vatRate) / 100 * item.quantity,
+              vatRate:item.vatRate,
               description: item.productName,
               orderItem: {
                 connect: {

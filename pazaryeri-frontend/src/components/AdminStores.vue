@@ -192,11 +192,6 @@
                 <textarea class="form-control" v-model="storeForm.address" rows="2"></textarea>
               </div>
 
-              <div class="mb-3">
-                <label class="form-label">Açıklama</label>
-                <textarea class="form-control" v-model="storeForm.description" rows="3"></textarea>
-              </div>
-
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Vergi Numarası</label>
@@ -205,21 +200,11 @@
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Durum</label>
                   <select class="form-select" v-model="storeForm.status">
-                    <option value="ACTIVE">Aktif</option>
+                    <option value="APPROVED">Aktif</option>
                     <option value="PENDING">Onay Bekliyor</option>
                     <option value="SUSPENDED">Askıya Alındı</option>
                   </select>
                 </div>
-              </div>
-
-              <div class="mb-3">
-                <label class="form-label">Logo URL</label>
-                <input type="text" class="form-control" v-model="storeForm.logoUrl">
-              </div>
-
-              <div class="mb-3">
-                <label class="form-label">Komisyon Oranı (%)</label>
-                <input type="number" class="form-control" v-model.number="storeForm.commissionRate" min="0" max="100" step="0.1">
               </div>
             </form>
           </div>
@@ -267,7 +252,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import apiClient from "@/api.js";
+import apiClient from "@/api";
 
 // Pagination
 const currentPage = ref(1);
@@ -308,11 +293,8 @@ const storeForm = ref({
   email: '',
   phone: '',
   address: '',
-  description: '',
   taxNumber: '',
   status: 'PENDING',
-  logoUrl: '',
-  commissionRate: 5 // Default commission rate
 });
 
 // For delete modal
@@ -412,11 +394,8 @@ const editStore = (store) => {
     email: store.email,
     phone: store.phone || '',
     address: store.address || '',
-    description: store.description || '',
     taxNumber: store.taxNumber || '',
     status: store.status,
-    logoUrl: store.logoUrl || '',
-    commissionRate: store.commissionRate || 5
   };
   showAddStoreModal.value = true;
 };
@@ -469,7 +448,7 @@ const deleteStore = async () => {
   deleteSubmitting.value = true;
   try {
     // Replace with your actual API endpoint
-    await axios.delete(`/api/admin/stores/${storeToDelete.value.id}`);
+    await apiClient.delete(`/admin/stores/${storeToDelete.value.id}`);
 
     Swal.fire({
       icon: 'success',
@@ -499,7 +478,7 @@ const saveStore = async () => {
   try {
     if (editingStore.value) {
       // Update existing store
-      await axios.put(`/api/admin/stores/${editingStore.value.id}`, storeForm.value);
+      await apiClient.put(`/admin/stores/${editingStore.value.id}`, storeForm.value);
 
       Swal.fire({
         icon: 'success',
@@ -508,7 +487,7 @@ const saveStore = async () => {
       });
     } else {
       // Create new store
-      await axios.post('/api/admin/stores', storeForm.value);
+      await apiClient.post('/admin/stores', storeForm.value);
 
       Swal.fire({
         icon: 'success',

@@ -35,9 +35,44 @@ export const useLoggedInStore = defineStore('loggedIn', () => {
     role.value = userRole;
   }
   return { loggedIn, login, logout, setRole, role }
+}, {
+  persist:true
+})
+export const useCouponStore = defineStore('coupon', () => {
+  const couponCode = ref({
+    id: String,
+    type: String,
+    desc: String,
+    code: String,
+    value: Number,
+    storeId: null,
+    categoryIds: [],
+    productIds: [],
+    eligibleItemIds: []
+  })
+  function setCouponCode(data) {
+    couponCode.value = data;
+  }
+  function clearCouponCode() {
+    couponCode.value = {
+      id: null,
+      type: null,
+      desc: null,
+      code: null,
+      value: null,
+      storeId: null,
+      categoryIds: [],
+      productIds: [],
+      eligibleItemIds: []
+    }
+  }
+  return {couponCode, setCouponCode, clearCouponCode}
+}, {
+  persist:true
 })
 export const useCartStore = defineStore('cart', () => {
   const cart = ref([]);
+
 
   function initCart(cartData) {
     if (cartData && cartData.items) {

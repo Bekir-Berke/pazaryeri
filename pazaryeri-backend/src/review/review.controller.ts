@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards,Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UseInterceptors, UploadedFile, UploadedFiles } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
@@ -6,17 +6,38 @@ import { AuthGuard } from '../auth/auth.guard';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Permissions } from '../auth/permissions.decorator';
 import { Permission } from '../auth/permissions.enum';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { UploadService } from '../upload/upload.service';
 
 @Controller('review')
 export class ReviewController {
-  constructor(private readonly reviewService: ReviewService) {}
+  constructor(
+    private readonly reviewService: ReviewService,
+    private readonly uploadService: UploadService
+  ) {}
 
   @Post()
   @UseGuards(AuthGuard, PermissionsGuard)
   @Permissions(Permission.CREATE_REVIEW)
-  create(@Body() createReviewDto: CreateReviewDto, @Req() req:Request ) {
+  @UseInterceptors(FilesInterceptor('images', 5)) // En fazla 5 resim yüklenebilir
+  async create(
+    @Body() createReviewDto: CreateReviewDto, 
+    @Req() req: Request,
+    @UploadedFiles() files: Array<Express.Multer.File>
+  ) {
     const userId = req['user'].sub;
-    return this.reviewService.create(userId,createReviewDto);
+    
+    // Resimler yüklendiyse, yükle ve URL'lerini ekle
+    let imageUrls: string[] = [];
+    if (files && files.length > 0) {
+      for (const file of files) {
+        const imageUrl = await this.uploadService.uploadFile(file);
+        imageUrls.push(imageUrl);
+      }
+      createReviewDto.imageUrls = imageUrls;
+    }
+    
+    return this.reviewService.create(userId, createReviewDto);
   }
 
   @Get(':id')

@@ -1,4 +1,4 @@
-FROM node:22-slim
+FROM node:20-slim
 
 RUN apt-get update -y \
 && apt-get install -y openssl
@@ -13,6 +13,6 @@ RUN npx prisma generate
 
 RUN npm run build
 
-CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed && npm run start:prod"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed && node dist/src/main"]
 
-EXPOSE 4000
+EXPOSE 3000

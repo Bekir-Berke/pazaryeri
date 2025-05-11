@@ -2,7 +2,7 @@ import axios from "axios";
 import router from "./router";
 
 const apiClient = axios.create({
-  baseURL: "https://pazaryeri.bekirberke.tr/api",
+  baseURL:"http://localhost:3000",
   headers: {
     "Content-Type": "application/json",
   },
@@ -26,8 +26,18 @@ apiClient.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
-    
-    // 401 hatası ve henüz retry yapılmamış ise
+    if (
+      error.response && 
+      error.response.status === 401 && 
+      (originalRequest.url === "/auth/me" || originalRequest.url.endsWith("/auth/me"))
+    ) {
+      return Promise.resolve({ 
+        data: { 
+          isLoggedIn: false, 
+          message: "Kullanıcı giriş yapmamış" 
+        } 
+      });
+    }
     if (
       error.response && 
       error.response.status === 401 && 

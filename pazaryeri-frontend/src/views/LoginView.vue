@@ -118,18 +118,15 @@ import Swal from 'sweetalert2'
 import { ref, computed, onMounted } from 'vue';
 import { useLoggedInStore } from '@/stores/counter';
 
-// Form verileri
 const email = ref('');
 const password = ref('');
 const showPassword = ref(false);
 const loginStore = useLoggedInStore();
 
-// Hata yönetimi
 const emailError = ref('');
 const passwordError = ref('');
 const isLoading = ref(false);
 
-// Email input'a otomatik odaklanma için ref
 const emailInput = ref(null);
 
 // Form geçerliliği kontrolü

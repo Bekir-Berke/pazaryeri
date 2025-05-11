@@ -19,9 +19,37 @@
         <div class="order-section">
           <h2>Sipariş Özeti</h2>
           <div class="order-summary">
+            <div v-if="order.Coupon" class="summary-item coupon-info">
+              <span class="label">Kupon:</span>
+              <span class="value">{{ order.Coupon.code }}</span>
+            </div>
             <div class="summary-item">
               <span class="label">Toplam Tutar:</span>
               <span class="value price">{{ formatPrice(order.totalAmount) }} ₺</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Faturalar Bölümü -->
+        <div v-if="order.invoices && order.invoices.length > 0" class="order-section">
+          <h2>Faturalar</h2>
+          <div class="invoices-list">
+            <div v-for="invoice in order.invoices" :key="invoice.id" class="invoice-item">
+              <div class="invoice-info">
+                <div class="invoice-number">
+                  <span class="label">Fatura No:</span>
+                  <span class="value">{{ invoice.invoiceNumber || "N/A" }}</span>
+                </div>
+                <div class="invoice-date">
+                  <span class="label">Tarih:</span>
+                  <span class="value">{{ formatDate(invoice.createdAt) }}</span>
+                </div>
+              </div>
+              <div class="invoice-actions">
+                <a v-if="invoice.pdfUrl" :href="invoice.pdfUrl" target="_blank" class="btn-invoice">
+                  <i class="bi bi-file-earmark-pdf"></i> Faturayı Görüntüle
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -284,6 +312,10 @@ const translateStatus = (status) => {
   font-size: 1.1rem;
 }
 
+.order-summary .price.discount {
+  color: #e53e3e;
+}
+
 .address-card, .payment-card {
   padding: 1rem 0;
 }
@@ -479,5 +511,68 @@ const translateStatus = (status) => {
   .order-sections {
     grid-template-columns: 1fr;
   }
+}
+
+.invoices-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.invoice-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: #f9fafc;
+  border-radius: 6px;
+  border-left: 3px solid #0070f3;
+}
+
+.invoice-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.invoice-number, .invoice-date, .invoice-amount {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.invoice-info .label {
+  font-weight: 500;
+  color: #666;
+}
+
+.invoice-info .value {
+  font-weight: 600;
+  color: #333;
+}
+
+.invoice-actions {
+  display: flex;
+  align-items: center;
+}
+
+.btn-invoice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #f1f5f9;
+  color: #0070f3;
+  border-radius: 4px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.btn-invoice:hover {
+  background-color: #e0f2fe;
+}
+
+.btn-invoice i {
+  font-size: 1.1rem;
 }
 </style>

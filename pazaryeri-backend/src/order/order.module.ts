@@ -7,10 +7,10 @@ import {ConfigModule} from '@nestjs/config';
 import { InvoiceService } from 'src/invoice/invoice.service';
 import { PdfService } from 'src/pdf/pdf.service';
 import { UploadService } from 'src/upload/upload.service';
-
+import { CouponService } from 'src/coupon/coupon.service';
 @Module({
   imports: [ConfigModule],
   controllers: [OrderController],
-  providers: [OrderService, PrismaService, RedisService, InvoiceService, PdfService, UploadService],
+  providers: [OrderService, PrismaService, RedisService, InvoiceService, PdfService, UploadService, CouponService],
 })
 export class OrderModule {}

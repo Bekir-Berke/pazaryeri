@@ -66,13 +66,11 @@ export class CreateProductDto {
   @Matches(/^[0-9x\/\-\s]+$/, { message: 'Geçerli bir boyut formatı giriniz (ör: 10x15x5)' })
   dimensions?: string;
 
-  @IsOptional()
-  @IsBoolean()
-  isActive: boolean = true;
-
-  @IsOptional()
-  @IsBoolean()
-  isFeature: boolean = false;
+  @Transform(({ value }) => value === 'true')
+  isActive: boolean;
+  
+  @Transform(({ value }) => value === 'true')
+  isFeature: boolean;
 
   @IsNotEmpty({ message: 'Ana ürün görseli zorunludur' })
   @IsString()

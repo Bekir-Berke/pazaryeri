@@ -42,6 +42,9 @@ export class StoreService {
             }
           },
           products: {
+            where:{
+              deletedAt:null
+            },
             include: {
               brand: true,
               attributes: true,
@@ -50,11 +53,31 @@ export class StoreService {
               categories: true
             }
           },
+          Coupon:{
+            where:{
+              deletedAt:null,
+            },
+            select:{
+              id:true,
+              code:true,
+              description:true,
+              value:true,
+              type:true,
+              isActive:true,
+              startDate:true,
+              minOrderAmount:true,
+              endDate:true,
+              perUserLimit:true,
+              usageLimit:true,
+              usedCount:true
+            }
+          }
         }
       }
     )
     const orders = await this.findStoreOrders(id);
-    return { ...store, orders };
+    const reviews = await this.findStoreReviews(id);
+    return { ...store, orders, reviews };
   }
 
   findStoreProducts(id: string) {
@@ -106,6 +129,7 @@ export class StoreService {
   async findStoreOrders(storeId: string) {
     return this.prisma.order.findMany({
       where: {
+        deletedAt:null,
         items: {
           some: {
             product: {
@@ -130,6 +154,15 @@ export class StoreService {
             district: true,
             neighborhood: true,
             fullAddress: true
+          }
+        },
+        Coupon:{
+          select:{
+            id:true,
+            code:true,
+            description:true,
+            value:true,
+            type:true,
           }
         },
         items: {
@@ -159,5 +192,31 @@ export class StoreService {
         createdAt: 'desc'
       }
     });
+  }
+  async findStoreReviews(storeId: string) {
+    return this.prisma.review.findMany({
+      where:{
+        orderItem:{
+          product:{
+            storeId
+          }
+        }
+      },
+      select:{
+        id:true,
+        rating:true,
+        comment:true,
+        imageUrls:true,
+        createdAt:true,
+        orderItem:{
+          select:{
+            productName:true,
+            productId:true,
+            variantId:true,
+            variantName:true,
+          }
+        }
+      }   
+    })
   }
 }

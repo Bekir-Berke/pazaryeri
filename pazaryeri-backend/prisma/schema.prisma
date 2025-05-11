@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-arm64-openssl-3.0.x", "darwin-arm64"]
 }
 
@@ -9,22 +9,24 @@ datasource db {
 }
 
 model User {
-  id           String     @id @default(uuid()) @db.Uuid
-  email        String     @unique
-  passwordHash String     @map("password_hash")
-  firstName    String?    @map("first_name")
-  lastName     String?    @map("last_name")
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @default(now()) @map("updated_at")
-  deletedAt    DateTime? @map("deleted_at")
-  isActive     Boolean    @default(true) @map("is_active")
-  role         Role       @default(USER)
-  addresses    Address[]  
-  cart         Cart?
-  orders       Order[]
-  cards        Card[]
-  favorites    Favorite[]
-  reviews      Review[]
+  id                 String               @id @default(uuid()) @db.Uuid
+  email              String               @unique
+  passwordHash       String               @map("password_hash")
+  firstName          String?              @map("first_name")
+  lastName           String?              @map("last_name")
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @default(now()) @map("updated_at")
+  deletedAt          DateTime?            @map("deleted_at")
+  isActive           Boolean              @default(true) @map("is_active")
+  role               Role                 @default(USER)
+  addresses          Address[]
+  cart               Cart?
+  orders             Order[]
+  cards              Card[]
+  favorites          Favorite[]
+  reviews            Review[]
+  CouponUser         CouponUser[]
+  CouponUsageHistory CouponUsageHistory[]
 
   @@map("users")
 }
@@ -50,7 +52,7 @@ model Order {
   phone          String?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
-  deletedAt      DateTime? @map("deleted_at")
+  deletedAt      DateTime?   @map("deleted_at")
   user           User        @relation(fields: [userId], references: [id])
   items          OrderItem[]
   invoices       Invoice[]
@@ -64,16 +66,19 @@ model Order {
   district     String?
   neighborhood String?
 
-  cardId         String? @db.Uuid
-  card           Card?   @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  cardHolderName String? @map("card_holder_name")
-  cardNumber     String? @map("card_number")
-  cardBrand      String? @map("card_brand")
-  cardType       String? @map("card_type")
-  cardIssuer     String? @map("cart_issuer")
-  expiryMonth    Int?    @map("expiry_month")
-  expiryYear     Int?    @map("expiry_year")
-  cvv            String? @map("cvv")
+  cardId             String?              @db.Uuid
+  card               Card?                @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  cardHolderName     String?              @map("card_holder_name")
+  cardNumber         String?              @map("card_number")
+  cardBrand          String?              @map("card_brand")
+  cardType           String?              @map("card_type")
+  cardIssuer         String?              @map("cart_issuer")
+  expiryMonth        Int?                 @map("expiry_month")
+  expiryYear         Int?                 @map("expiry_year")
+  cvv                String?              @map("cvv")
+  Coupon             Coupon?              @relation(fields: [couponId], references: [id])
+  couponId           String?              @db.Uuid
+  CouponUsageHistory CouponUsageHistory[]
 
   @@map("orders")
 }
@@ -94,7 +99,7 @@ model Invoice {
   paidAt        DateTime?     @map("paid_at")
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
-  deletedAt     DateTime? @map("deleted_at")
+  deletedAt     DateTime?     @map("deleted_at")
   items         InvoiceItem[]
 
   @@map("invoices")
@@ -120,22 +125,22 @@ model InvoiceItem {
 }
 
 model Card {
-  id             String   @id @default(uuid()) @db.Uuid
-  userId         String   @map("user_id") @db.Uuid
-  cardHolderName String   @map("card_holder_name")
-  cardNumber     String   @map("card_number")
-  expiryMonth    Int      @map("expiry_month")
-  expiryYear     Int      @map("expiry_year")
-  cvv            String   @map("cvv")
-  isDefault      Boolean  @default(false) @map("is_default")
-  cardBrand      String   @map("card_brand")
-  cardType       String   @map("card_type")
-  cardIssuer     String   @map("cart_issuer")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  cardHolderName String    @map("card_holder_name")
+  cardNumber     String    @map("card_number")
+  expiryMonth    Int       @map("expiry_month")
+  expiryYear     Int       @map("expiry_year")
+  cvv            String    @map("cvv")
+  isDefault      Boolean   @default(false) @map("is_default")
+  cardBrand      String    @map("card_brand")
+  cardType       String    @map("card_type")
+  cardIssuer     String    @map("cart_issuer")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   Order          Order[]
-  deletedAt     DateTime? @map("deleted_at")
+  deletedAt      DateTime? @map("deleted_at")
 
   @@map("cards")
 }
@@ -156,7 +161,7 @@ model OrderItem {
   status       OrderStatus     @default(PENDING)
   invoiceItems InvoiceItem[]
   createdAt    DateTime        @default(now())
-  deletedAt    DateTime? @map("deleted_at")
+  deletedAt    DateTime?       @map("deleted_at")
   order        Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product      Product         @relation(fields: [productId], references: [id])
   variant      ProductVariant? @relation(fields: [variantId], references: [id])
@@ -167,19 +172,19 @@ model OrderItem {
 }
 
 model Address {
-  id           String   @id @default(uuid()) @db.Uuid
-  userId       String   @map("user_id") @db.Uuid
-  addressTitle String?  @map("address_title")
-  fullName     String?  @map("full_name")
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  addressTitle String?   @map("address_title")
+  fullName     String?   @map("full_name")
   phone        String?
   city         String?
   district     String?
   neighborhood String?
-  fullAddress  String?  @map("full_address")
-  isDefault    Boolean  @default(false) @map("is_default")
-  createdAt    DateTime @default(now()) @map("created_at")
+  fullAddress  String?   @map("full_address")
+  isDefault    Boolean   @default(false) @map("is_default")
+  createdAt    DateTime  @default(now()) @map("created_at")
   deletedAt    DateTime? @map("deleted_at")
-  user         User     @relation(fields: [userId], references: [id])
+  user         User      @relation(fields: [userId], references: [id])
   Order        Order[]
 
   @@map("addresses")
@@ -203,13 +208,111 @@ model Store {
   phone          String
   status         StoreStatus @default(APPROVED)
   createdAt      DateTime    @default(now())
-  deletedAt      DateTime? @map("deleted_at")
+  deletedAt      DateTime?   @map("deleted_at")
   products       Product[]
   companyType    CompanyType @relation(fields: [companyTypeId], references: [id])
   orders         OrderItem[]
   invoices       Invoice[]
+  Coupon         Coupon[]
 
   @@map("stores")
+}
+
+// Existing schema content...
+
+// Coupon model
+model Coupon {
+  id             String     @id @default(uuid()) @db.Uuid
+  code           String     @unique
+  type           CouponType
+  value          Decimal    @db.Decimal(10, 2)
+  minOrderAmount Decimal?   @db.Decimal(10, 2)
+  maxDiscount    Decimal?   @db.Decimal(10, 2)
+  startDate      DateTime
+  endDate        DateTime
+  usageLimit     Int?
+  perUserLimit Int?
+  usedCount      Int        @default(0)
+  isActive       Boolean    @default(true)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  deletedAt      DateTime?  @map("deleted_at")
+  description    String?
+
+  // Relations
+  storeId      String?              @db.Uuid
+  store        Store?               @relation(fields: [storeId], references: [id])
+  usageHistory CouponUsageHistory[]
+  categories   CouponCategory[]
+  products     CouponProduct[]
+  users        CouponUser[]
+  orders       Order[]
+
+  @@map("coupons")
+}
+
+// CouponType enum
+enum CouponType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  FREE_SHIPPING
+}
+
+// Join table for coupons and categories
+model CouponCategory {
+  id         String @id @default(uuid()) @db.Uuid
+  couponId   String @db.Uuid
+  categoryId String @db.Uuid
+
+  // Relations
+  coupon   Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([couponId, categoryId])
+  @@map("coupon_categories")
+}
+
+// Join table for coupons and products
+model CouponProduct {
+  id        String @id @default(uuid()) @db.Uuid
+  couponId  String @db.Uuid
+  productId String @db.Uuid
+
+  // Relations
+  coupon  Coupon  @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([couponId, productId])
+  @@map("coupon_products")
+}
+
+// Join table for coupons and users (for personalized coupons)
+model CouponUser {
+  id       String @id @default(uuid()) @db.Uuid
+  couponId String @db.Uuid
+  userId   String @db.Uuid
+
+  // Relations
+  coupon Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([couponId, userId])
+  @@map("coupon_users")
+}
+
+model CouponUsageHistory {
+  id        String   @id @default(uuid()) @db.Uuid
+  couponId  String   @db.Uuid
+  userId    String   @db.Uuid
+  orderId   String   @db.Uuid
+  amount    Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+
+  coupon Coupon @relation(fields: [couponId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+  order  Order  @relation(fields: [orderId], references: [id])
+
+  @@map("coupon_usage_history")
 }
 
 model CompanyType {
@@ -222,34 +325,35 @@ model CompanyType {
 }
 
 model Product {
-  id          String             @id @default(uuid()) @db.Uuid
-  name        String
-  description String
-  brandId     String             @db.Uuid
-  price       Decimal            @db.Decimal(10, 2)
-  vatRate     Decimal            @db.Decimal(5, 2)
-  vatPrice    Decimal            @db.Decimal(10, 2)
-  stock       Int                @default(0)
-  sku         String             @unique
-  barcode     String             @unique
-  weight      Float?
-  dimensions  String?
-  isActive    Boolean            @default(true)
-  isFeature   Boolean            @default(false)
-  imageUrl    String
-  storeId     String             @db.Uuid
-  createdAt   DateTime           @default(now())
-  deletedAt   DateTime? @map("deleted_at")
-  updatedAt   DateTime           @updatedAt
-  attributes  ProductAttribute[]
-  categories  ProductCategory[]
-  images      ProductImage[]
-  variants    ProductVariant[]
-  brand       Brand              @relation(fields: [brandId], references: [id])
-  store       Store              @relation(fields: [storeId], references: [id])
-  CartItem    CartItem[]
-  OrderItem   OrderItem[]
-  favoritedBy Favorite[]
+  id            String             @id @default(uuid()) @db.Uuid
+  name          String
+  description   String
+  brandId       String             @db.Uuid
+  price         Decimal            @db.Decimal(10, 2)
+  vatRate       Decimal            @db.Decimal(5, 2)
+  vatPrice      Decimal            @db.Decimal(10, 2)
+  stock         Int                @default(0)
+  sku           String             @unique
+  barcode       String             @unique
+  weight        Float?
+  dimensions    String?
+  isActive      Boolean            @default(true)
+  isFeature     Boolean            @default(false)
+  imageUrl      String
+  storeId       String             @db.Uuid
+  createdAt     DateTime           @default(now())
+  deletedAt     DateTime?          @map("deleted_at")
+  updatedAt     DateTime           @updatedAt
+  attributes    ProductAttribute[]
+  categories    ProductCategory[]
+  images        ProductImage[]
+  variants      ProductVariant[]
+  brand         Brand              @relation(fields: [brandId], references: [id])
+  store         Store              @relation(fields: [storeId], references: [id])
+  CartItem      CartItem[]
+  OrderItem     OrderItem[]
+  favoritedBy   Favorite[]
+  CouponProduct CouponProduct[]
 
   @@map("products")
 }
@@ -284,7 +388,7 @@ model Brand {
   id       String    @id @default(uuid()) @db.Uuid
   name     String
   products Product[]
-
+  deletedAt DateTime? @map("deleted_at")
   @@map("brands")
 }
 
@@ -329,18 +433,19 @@ model ProductCategory {
 }
 
 model Category {
-  id          String            @id @default(uuid()) @db.Uuid
-  name        String
-  description String?
-  isActive    Boolean           @default(true)
-  parentId    String?           @db.Uuid
-  level       Int               @default(0)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  parent      Category?         @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children    Category[]        @relation("CategoryHierarchy")
-  products    ProductCategory[]
-  deletedAt   DateTime? @map("deleted_at")
+  id             String            @id @default(uuid()) @db.Uuid
+  name           String
+  description    String?
+  isActive       Boolean           @default(true)
+  parentId       String?           @db.Uuid
+  level          Int               @default(0)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  parent         Category?         @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children       Category[]        @relation("CategoryHierarchy")
+  products       ProductCategory[]
+  deletedAt      DateTime?         @map("deleted_at")
+  CouponCategory CouponCategory[]
 
   @@map("categories")
 }

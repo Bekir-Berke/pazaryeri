@@ -65,6 +65,7 @@
               <th scope="col" width="60">Görsel</th>
               <th scope="col">Ürün Bilgisi</th>
               <th scope="col">Mağaza / Marka</th>
+              <th scope="col">Kategoriler</th>
               <th scope="col">Fiyat</th>
               <th scope="col">Stok</th>
               <th scope="col">Durum</th>
@@ -91,6 +92,16 @@
               <td>
                 <div>{{ product.store?.name || 'Belirtilmemiş' }}</div>
                 <div class="text-muted small">{{ product.brand?.name || 'Belirtilmemiş' }}</div>
+              </td>
+              <td>
+                <div class="d-flex flex-wrap gap-1">
+                  <span v-for="categoryItem in product.categories" :key="categoryItem.category.id" class="badge bg-info">
+                    {{ categoryItem.category.name }}
+                  </span>
+                  <span v-if="!product.categories || product.categories.length === 0" class="text-muted small">
+                    Kategori yok
+                  </span>
+                </div>
               </td>
               <td>
                 <div>{{ formatPrice(product.vatPrice) }} ₺</div>
@@ -212,6 +223,27 @@
               </div>
 
               <div class="mb-3">
+                <label class="form-label">Kategoriler</label>
+                <div class="border rounded p-3" style="max-height: 150px; overflow-y: auto;">
+                  <div v-for="category in categories" :key="category.id" class="form-check">
+                    <input 
+                      class="form-check-input" 
+                      type="checkbox" 
+                      :id="`category-${category.id}`" 
+                      :value="category.id" 
+                      v-model="productForm.categoryIds"
+                    >
+                    <label class="form-check-label" :for="`category-${category.id}`">
+                      {{ category.name }}
+                    </label>
+                  </div>
+                  <div v-if="categories.length === 0" class="text-muted">
+                    Kategori bulunamadı
+                  </div>
+                </div>
+              </div>
+
+              <div class="mb-3">
                 <label for="productImageUrl" class="form-label">Görsel URL</label>
                 <input type="url" class="form-control" id="productImageUrl" v-model="productForm.imageUrl">
               </div>
@@ -300,6 +332,7 @@ const filter = ref('ALL');
 // Related data
 const stores = ref([]);
 const brands = ref([]);
+const categories = ref([]);
 
 // For add/edit modal
 const showAddProductModal = ref(false);
@@ -318,6 +351,7 @@ const productForm = ref({
   imageUrl: '',
   storeId: '',
   brandId: '',
+  categoryIds: [],
   isActive: true
 });
 
@@ -370,7 +404,7 @@ const fetchProducts = async () => {
 // Fetch brands
 const fetchBrands = async () => {
   try {
-    const response = await apiClient.get('/brands');
+    const response = await apiClient.get('/brand');
     brands.value = response.data || [];
   } catch (error) {
     console.error('Error fetching brands:', error);
@@ -384,6 +418,16 @@ const fetchStores = async () => {
     stores.value = response.data || [];
   } catch (error) {
     console.error('Error fetching stores:', error);
+  }
+};
+
+// Fetch categories
+const fetchCategories = async () => {
+  try {
+    const response = await apiClient.get('/category');
+    categories.value = response.data || [];
+  } catch (error) {
+    console.error('Error fetching categories:', error);
   }
 };
 
@@ -449,6 +493,7 @@ const editProduct = (product) => {
     imageUrl: product.imageUrl || '',
     storeId: product.store?.id || '',
     brandId: product.brand?.id || '',
+    categoryIds: product.categories?.map(item => item.category.id) || [],
     isActive: product.isActive !== false
   };
   showAddProductModal.value = true;
@@ -554,6 +599,7 @@ const closeProductModal = () => {
     imageUrl: '',
     storeId: '',
     brandId: '',
+    categoryIds: [],
     isActive: true
   };
 };
@@ -568,6 +614,7 @@ onMounted(() => {
   fetchProducts();
   fetchBrands();
   fetchStores();
+  fetchCategories();
 });
 </script>
 

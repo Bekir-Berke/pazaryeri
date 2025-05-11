@@ -73,7 +73,17 @@ export class CategoryService {
                   }
                 }
               }
+            },
+            products: {
+              include: {
+                product: true
+              }
             }
+          }
+        },
+        products: {
+          include: {
+            product: true
           }
         }
       }

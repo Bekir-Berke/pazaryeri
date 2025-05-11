@@ -47,7 +47,7 @@
           >
           <div v-else class="no-image">Görsel Yok</div>
           <div class="product-info">
-            <h4 class="product-name">{{ review.orderItem.product?.name }}</h4>
+            <h4 class="product-name">{{ review.orderItem.product?.name || review.orderItem.productName }}</h4>
             <p v-if="review.variant" class="product-variant">{{ review.variant.name }}</p>
           </div>
         </div>
@@ -61,6 +61,18 @@
           </div>
           
           <p class="review-comment">{{ review.comment }}</p>
+          
+          <!-- Review Images -->
+          <div v-if="review.imageUrls && review.imageUrls.length > 0" class="review-images">
+            <div 
+              v-for="(imageUrl, index) in review.imageUrls" 
+              :key="index" 
+              class="review-image-container"
+              @click="openImage(imageUrl)"
+            >
+              <img :src="imageUrl" :alt="`Değerlendirme görseli ${index + 1}`" class="review-image-thumbnail">
+            </div>
+          </div>
           
           <div class="review-actions">
             <button @click="editReview(review)" class="btn-edit">
@@ -93,7 +105,7 @@
           >
           <div v-else class="no-image">Görsel Yok</div>
           <div class="product-info">
-            <h4>{{ currentReview.product?.name }}</h4>
+            <h4>{{ currentReview.product?.name || currentReview.orderItem?.productName }}</h4>
             <p v-if="currentReview.variant">{{ currentReview.variant.name }}</p>
           </div>
         </div>
@@ -120,6 +132,23 @@
           ></textarea>
         </div>
         
+        <!-- Review Images in Edit Modal -->
+        <div v-if="currentReview.imageUrls && currentReview.imageUrls.length > 0" class="review-images-edit">
+          <p>Değerlendirme Görselleri:</p>
+          <div class="review-images-grid">
+            <div 
+              v-for="(imageUrl, index) in currentReview.imageUrls" 
+              :key="index" 
+              class="review-image-edit-container"
+            >
+              <img :src="imageUrl" :alt="`Değerlendirme görseli ${index + 1}`" class="review-image-edit">
+              <button @click="removeImage(index)" class="btn-remove-image">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        
         <div class="modal-actions">
           <button @click="closeEditModal" class="btn-cancel">İptal</button>
           <button 
@@ -140,7 +169,7 @@ import { ref, computed, defineEmits } from 'vue';
 import Swal from 'sweetalert2';
 
 const reviews = defineModel();
-
+const emit = defineEmits(['edit', 'delete']);
 
 // Filtreleme ve sıralama için durum değişkenleri
 const sortOption = ref('newest');
@@ -151,6 +180,7 @@ const showEditModal = ref(false);
 const currentReview = ref({});
 const editedRating = ref(0);
 const editedComment = ref('');
+const editedImages = ref([]);
 
 // Filtrelenmiş ve sıralanmış değerlendirmeler
 const filteredReviews = computed(() => {
@@ -180,6 +210,18 @@ const filteredReviews = computed(() => {
   return result;
 });
 
+// Görsel açma fonksiyonu
+const openImage = (imageUrl) => {
+  window.open(imageUrl, '_blank');
+};
+
+// Düzenleme modunda görsel kaldırma
+const removeImage = (index) => {
+  const newImages = [...editedImages.value];
+  newImages.splice(index, 1);
+  editedImages.value = newImages;
+};
+
 // Yıldız filtresini aç/kapat
 const toggleStarFilter = (star) => {
   const index = starFilter.value.indexOf(star);
@@ -205,6 +247,7 @@ const editReview = (review) => {
   currentReview.value = review;
   editedRating.value = review.rating;
   editedComment.value = review.comment;
+  editedImages.value = review.imageUrls ? [...review.imageUrls] : [];
   showEditModal.value = true;
 };
 
@@ -214,6 +257,7 @@ const closeEditModal = () => {
   currentReview.value = {};
   editedRating.value = 0;
   editedComment.value = '';
+  editedImages.value = [];
 };
 
 // Değerlendirmeyi güncelle
@@ -223,7 +267,8 @@ const updateReview = async () => {
     emit('edit', {
       id: currentReview.value.id,
       rating: editedRating.value,
-      comment: editedComment.value
+      comment: editedComment.value,
+      imageUrls: editedImages.value
     });
     
     // Başarılı mesajı göster
@@ -461,6 +506,88 @@ const deleteReview = async (reviewId) => {
   color: #333;
 }
 
+/* Review images styling */
+.review-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.review-image-container {
+  width: 80px;
+  height: 80px;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.review-image-container:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.review-image-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Images styling in edit modal */
+.review-images-edit {
+  margin-top: 1.5rem;
+}
+
+.review-images-edit p {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.review-images-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.review-image-edit-container {
+  width: 80px;
+  height: 80px;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.review-image-edit {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.btn-remove-image {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: rgba(220, 53, 69, 0.8);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0;
+}
+
+.btn-remove-image:hover {
+  background-color: rgb(220, 53, 69);
+}
+
 .review-actions {
   display: flex;
   gap: 10px;
@@ -537,6 +664,8 @@ const deleteReview = async (reviewId) => {
   width: 90%;
   max-width: 500px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .edit-modal h3 {

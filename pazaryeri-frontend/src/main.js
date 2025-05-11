@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import {createBootstrap} from 'bootstrap-vue-next'
+import piniaPluginPersistedState from 'pinia-plugin-persistedstate';
 import ToastPlugin from 'vue-toast-notification';
 import "bootstrap/dist/css/bootstrap.min.css"
 import 'bootstrap-vue-next/dist/bootstrap-vue-next.css'
@@ -12,7 +13,7 @@ import router from './router'
 
 const app = createApp(App)
 
-app.use(createPinia())
+app.use(createPinia().use(piniaPluginPersistedState))
 app.use(createBootstrap())
 app.use(ToastPlugin)
 app.use(router)

@@ -21,7 +21,7 @@
             </li>
             <li class="breadcrumb-item" v-if="product.categories">
               <router-link
-                :to="`/categories/${product.categories[0].categoryId}`"
+                :to="`/category/${product.categories[0].categoryId}`"
               >
                 <i class="bi bi-tag"></i>
                 {{ product.categories[0].category.name }}
@@ -90,7 +90,7 @@
               <div class="category-info" v-if="product.category">
                 <span>Kategori: </span>
                 <router-link
-                  :to="`/categories/${product.category.id}`"
+                  :to="`/category/${product.category.id}`"
                   class="category-name"
                 >
                   <i class="bi bi-tag-fill"></i> {{ product.category.name }}
@@ -334,6 +334,22 @@
                     </div>
                     
                     <div class="review-comment">{{ review.comment }}</div>
+                    
+                    <!-- Review Images -->
+                    <div class="review-images" v-if="review.imageUrls && review.imageUrls.length > 0">
+                      <div 
+                        v-for="(imageUrl, imgIndex) in review.imageUrls" 
+                        :key="imgIndex" 
+                        class="review-image-container"
+                      >
+                        <img 
+                          :src="imageUrl" 
+                          :alt="`${review.user.firstName}'in değerlendirme görseli ${imgIndex + 1}`"
+                          class="review-image" 
+                          @click="openReviewImage(imageUrl)"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -486,6 +502,11 @@ const formatReviewDate = (dateString) => {
     month: "long",
     day: "numeric",
   });
+};
+
+const openReviewImage = (imageUrl) => {
+  // Open image in a new tab or create a modal to display the image
+  window.open(imageUrl, '_blank');
 };
 
 onMounted(() => {
@@ -1307,6 +1328,35 @@ onMounted(() => {
 .review-comment {
   color: #444;
   line-height: 1.6;
+  margin-bottom: 15px;
+}
+
+.review-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.review-image-container {
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.review-image-container:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.review-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .no-reviews {

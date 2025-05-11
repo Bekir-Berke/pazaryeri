@@ -20,9 +20,10 @@ import { PdfModule } from './pdf/pdf.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { AdminModule } from './admin/admin.module';
 import { ReviewModule } from './review/review.module';
+import { CouponModule } from './coupon/coupon.module';
 
 @Module({
-  imports: [UsersModule, AuthModule, ConfigModule.forRoot({envFilePath: '.env'}), AddressModule, StoreModule, ProductModule, CategoryModule, RedisModule, BrandModule, UploadModule, CartModule, CompanyModule, OrderModule, CardModule, InvoiceModule, PdfModule, FavoritesModule, AdminModule, ReviewModule],
+  imports: [UsersModule, AuthModule, ConfigModule.forRoot({envFilePath: '.env'}), AddressModule, StoreModule, ProductModule, CategoryModule, RedisModule, BrandModule, UploadModule, CartModule, CompanyModule, OrderModule, CardModule, InvoiceModule, PdfModule, FavoritesModule, AdminModule, ReviewModule, CouponModule],
   controllers: [AppController],
   providers: [AppService],
 })

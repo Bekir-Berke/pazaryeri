@@ -19,6 +19,7 @@ import AdminLoginView from "@/views/AdminLoginView.vue";
 import AdminDashboardView from "@/views/AdminDashboardView.vue";
 import ForbiddenView from "@/views/ForbiddenView.vue";
 import SearchView from '@/views/SearchView.vue'
+import { useLoggedInStore } from '@/stores/counter';
 const routes = [
     {
       path: '/',
@@ -77,7 +78,7 @@ const routes = [
       component: AccountView,
       meta: {
         requiresAuth: true,
-        roles:['ADMIN','USER']
+        roles:['USER']
       },
     },
     {
@@ -96,7 +97,7 @@ const routes = [
       component: CartView,
       meta:{
         requiresAuth: true,
-        roles:['ADMIN','USER']
+        roles:['USER']
       }
     },
     {
@@ -105,7 +106,7 @@ const routes = [
       component: CheckoutView,
       meta:{
         requiresAuth: true,
-        roles:['ADMIN','USER']
+        roles:['USER']
       }
     },
     {
@@ -143,7 +144,7 @@ const routes = [
       component: StoreDashboardView,
       meta: {
         requiresAuth: true,
-        roles: ['STORE','ADMIN'],
+        roles: ['STORE'],
         title: 'Pazaryerinde Satış Yap'
       },
     },
@@ -156,7 +157,7 @@ const routes = [
     component: AddProductView,
     meta: {
       requiresAuth: true,
-      roles: ['STORE','ADMIN'],
+      roles: ['STORE'],
       title: 'Pazaryerinde Satış Yap'
     },
    },
@@ -170,4 +171,20 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes
 })
+
+router.beforeEach((to, from, next) => {
+  const loginStore = useLoggedInStore();
+  const isLoggedIn = loginStore.loggedIn;
+  const role = loginStore.role;
+  if (to.meta.requiresAuth) {
+    if (!isLoggedIn) {
+      return next({ name: 'login' });
+    }
+    if (to.meta.roles && !to.meta.roles.includes(role)) {
+      return next({ name: 'forbidden' });
+    }
+  }
+  next();
+});
+
 export default router

@@ -206,46 +206,6 @@ const toggleProfileDropdown = () => {
   showProfileMenu.value = !showProfileMenu.value;
 };
 
-const showNotifications = () => {
-  Swal.fire({
-    title: 'Bildirimler',
-    html: `
-      <div class="notification-list">
-        <div class="notification-item">
-          <div class="notification-icon new"><i class="bi bi-shop"></i></div>
-          <div class="notification-content">
-            <div class="notification-title">Yeni mağaza başvurusu</div>
-            <div class="notification-text">XYZ Mağazası için yeni bir başvuru alındı</div>
-            <div class="notification-time">15 dakika önce</div>
-          </div>
-        </div>
-        <div class="notification-item">
-          <div class="notification-icon"><i class="bi bi-cart"></i></div>
-          <div class="notification-content">
-            <div class="notification-title">Yeni sipariş</div>
-            <div class="notification-text">3 yeni sipariş alındı</div>
-            <div class="notification-time">2 saat önce</div>
-          </div>
-        </div>
-        <div class="notification-item">
-          <div class="notification-icon"><i class="bi bi-person-plus"></i></div>
-          <div class="notification-content">
-            <div class="notification-title">Yeni kullanıcı kaydı</div>
-            <div class="notification-text">5 yeni kullanıcı kaydoldu</div>
-            <div class="notification-time">Dün</div>
-          </div>
-        </div>
-      </div>
-    `,
-    showConfirmButton: false,
-    showCloseButton: true,
-    customClass: {
-      container: 'notification-container',
-      popup: 'notification-popup'
-    }
-  });
-};
-
 const handleClickOutside = (event) => {
   if (profileDropdown.value && !profileDropdown.value.contains(event.target)) {
     showProfileMenu.value = false;
@@ -275,6 +235,7 @@ const logout = () => {
           .post('/auth/admin-logout')
           .then(() => {
             useLoggedInStore().setRole(null);
+            useLoggedInStore().logout();
             Swal.fire({
               icon: 'success',
               title: 'Başarıyla çıkış yaptınız.',

@@ -16,7 +16,7 @@ async function bootstrap() {
   app.use(cookieParser());
   const corsOrigins = process.env.CORS_ORIGINS 
   ? process.env.CORS_ORIGINS.split(',') 
-  : ['http://localhost:5173', 'http://localhost', 'http://localhost:80'];
+  : ['http://localhost:5173','http://localhost:81', 'http://localhost', 'http://localhost:80', 'http://frontend:81', 'http://pazaryeri.bekirberke.tr'];
   app.enableCors({origin: corsOrigins, credentials: true});
   const config = new DocumentBuilder()
   .setTitle('Pazaryeri backend')
@@ -25,6 +25,6 @@ async function bootstrap() {
   .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }
 bootstrap();

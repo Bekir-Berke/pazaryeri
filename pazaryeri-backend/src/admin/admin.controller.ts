@@ -7,7 +7,8 @@ import { UseGuards } from '@nestjs/common/decorators';
 import { Permissions } from 'src/auth/permissions.decorator';
 import { Permission } from 'src/auth/permissions.enum';
 import { PermissionsGuard } from 'src/auth/permissions.guard';
-
+import { UpdateStoreDto } from 'src/store/dto/update-store.dto';
+import { UpdateBrandDto } from 'src/brand/dto/update-brand.dto';
 
 @Controller('admin')
 export class AdminController {
@@ -36,6 +37,18 @@ export class AdminController {
   @Permissions(Permission.READ_ALL_STORES)
   getAllStores(){
     return this.adminService.getAllStores();
+  }
+  @Delete('stores/:id')
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @Permissions(Permission.DELETE_ANY_STORE)
+  removeStore(@Param('id') id: string) {
+    return this.adminService.removeStore(id);
+  }
+  @Put('stores/:id')
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @Permissions(Permission.UPDATE_ANY_STORE)
+  updateStore(@Param('id') id: string, @Body() updateStoreDto: UpdateStoreDto) {
+    return this.adminService.updateStore(id, updateStoreDto);
   }
   @Get('stores/applications')
   @UseGuards(AuthGuard, PermissionsGuard)
@@ -83,6 +96,21 @@ export class AdminController {
   @Permissions(Permission.READ_ALL_BRANDS)
   getAllBrands(){
     return this.adminService.getAllBrands();
+  }
+
+  @Patch('brands/:id')
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @Permissions(Permission.UPDATE_ANY_BRAND)
+  updateBrand(@Param('id') id: string, @Body() updateBrandDto: UpdateBrandDto) {
+    return this.adminService.updateBrand(id, updateBrandDto);
+  }
+
+
+  @Delete('brands/:id')
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @Permissions(Permission.DELETE_ANY_BRAND)
+  removeBrand(@Param('id') id: string) {
+    return this.adminService.removeBrand(id);
   }
 
   @Get('invoices')

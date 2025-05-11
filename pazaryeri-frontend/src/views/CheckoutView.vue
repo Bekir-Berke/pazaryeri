@@ -27,14 +27,24 @@
             {{ formatPrice(item.price * item.quantity)}}
           </div>
         </div>
-        <div class="cart-total">
-          <span>Toplam:</span>
-          <span>{{ formatPrice(cartTotal) }}</span>
-        </div>
-        <!-- Toplam KDV bilgisi ekleyelim -->
         <div class="cart-vat-total">
           <span>Toplam KDV:</span>
           <span>{{ formatPrice(totalVatAmount) }}</span>
+        </div>
+
+        <div v-if="couponStore.couponCode.type" class="cart-summary-row discount-row">
+          <span>İndirim ({{ couponStore.couponCode.code }} - {{ couponStore.couponCode.desc }})</span>
+          <span>-{{ formatDiscountAmount() }}</span>
+        </div>
+        
+        <div class="cart-total">
+          <span>Kargo:</span>
+          <span>{{ formatPrice(shippingCost) }}</span>
+        </div>
+
+        <div class="cart-grand-total">
+          <strong>Genel Toplam:</strong>
+          <strong>{{ formatPrice(grandTotal) }}</strong>
         </div>
       </div>
     </div>
@@ -317,13 +327,16 @@
 </template>
 
 <script setup>
-import {computed, onMounted, ref} from "vue";
+import {computed, onMounted, ref, watch} from "vue";
 import { useRoute } from "vue-router";
 import apiClient from "@/api.js";
 import axios from "axios";
-import {useCartStore} from "@/stores/counter.js";
+import {useCartStore, useCouponStore} from "@/stores/counter.js";
 import Swal from "sweetalert2";
+import {useToast} from "vue-toast-notification";
+
 const cartStore = useCartStore();
+const couponStore = useCouponStore();
 const router = useRoute();
 const provinces = ref([]);
 const districts = ref([]);
@@ -333,13 +346,87 @@ const cartCount = computed(() => {
 
 const calculateTax = (price, vatRate) => {
   if (!price || !vatRate) return 0;
-  const taxAmount = (parseFloat(price) * parseFloat(vatRate)) / 100;
+  const taxAmount = price * (vatRate / (100 + parseFloat(vatRate)));
   return taxAmount;
 };
 
+// Helper function to get eligible items for the coupon
+const getEligibleItems = () => {
+  if (!couponStore.couponCode.type) return [];
+  
+  let eligibleItems = [...cartStore.cart];
+  
+  if (couponStore.couponCode.storeId) {
+    eligibleItems = eligibleItems.filter(item => 
+      item.product && item.product.store && 
+      item.product.store.id === couponStore.couponCode.storeId
+    );
+  }
+  
+  if (couponStore.couponCode.categoryIds && couponStore.couponCode.categoryIds.length > 0) {
+    eligibleItems = eligibleItems.filter(item => {
+      if (!item.product || !item.product.categories) return false;
+      
+      const productCategoryIds = item.product.categories.map(pc => 
+        pc.category ? pc.category.id : null
+      ).filter(id => id !== null);
+      
+      return productCategoryIds.some(catId => 
+        couponStore.couponCode.categoryIds.includes(catId)
+      );
+    });
+  }
+  
+  if (couponStore.couponCode.productIds && couponStore.couponCode.productIds.length > 0) {
+    eligibleItems = eligibleItems.filter(item => 
+      couponStore.couponCode.productIds.includes(item.productId)
+    );
+  }
+  
+  return eligibleItems;
+};
+
 const cartTotal = computed(() => {
-  return cartStore.cart.reduce((total, item) => 
-    total + (item.price * item.quantity), 0).toFixed(2);
+  return cartStore.cart.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0
+  );
+});
+
+const productTotalPrice = cartTotal;
+
+const discountAmount = computed(() => {
+  if (!couponStore.couponCode.type) return 0;
+  
+  const eligibleItems = getEligibleItems();
+  
+  const eligibleTotal = eligibleItems.reduce((total, item) => 
+    total + (item.quantity * item.price), 0
+  );
+  
+  if (couponStore.couponCode.type === "PERCENTAGE") {
+    return eligibleTotal * (Number(couponStore.couponCode.value) / 100);
+  } else if (couponStore.couponCode.type === "FIXED_AMOUNT") {
+    return Math.min(Number(couponStore.couponCode.value), eligibleTotal);
+  }
+  
+  return 0;
+});
+
+const formatDiscountAmount = () => {
+  return formatPrice(discountAmount.value);
+};
+
+const shippingCost = ref(0);
+
+const grandTotal = computed(() => {
+  let total = productTotalPrice.value + shippingCost.value - discountAmount.value;
+  return total > 0 ? total : 0;
+});
+
+watch(grandTotal, (newVal) => {
+  orderDto.value.totalAmount = newVal;
+  orderDto.value.paidAmount = newVal;
 });
 
 const formatPrice = (price) => {
@@ -350,11 +437,40 @@ const formatPrice = (price) => {
 };
 
 const totalVatAmount = computed(() => {
+  // Calculate total VAT amount from all items in cart
   return cartStore.cart.reduce((total, item) => {
+    // Eğer fiyat KDV dahil ise, KDV tutarını hesapla
     const itemVat = calculateTax(item.price, item.product.vatRate) * item.quantity;
+    
+    // If eligible for discount, calculate VAT on discounted amount
+    if (couponStore.couponCode.type) {
+      const eligibleItems = getEligibleItems();
+      const isEligible = eligibleItems.some(eligibleItem => 
+        eligibleItem.productId === item.productId && 
+        (eligibleItem.variantId === item.variantId || (!eligibleItem.variantId && !item.variantId))
+      );
+      
+      if (isEligible) {
+        // For percentage discount, apply proportional discount to item
+        if (couponStore.couponCode.type === "PERCENTAGE") {
+          const discountedPrice = item.price * (1 - (couponStore.couponCode.value / 100));
+          return total + calculateTax(discountedPrice, item.product.vatRate) * item.quantity;
+        } 
+        // For fixed amount, we need to distribute the discount proportionally
+        else if (couponStore.couponCode.type === "FIXED_AMOUNT") {
+          const eligibleTotal = eligibleItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+          const discountRatio = Math.min(couponStore.couponCode.value / eligibleTotal, 1);
+          const discountedPrice = item.price * (1 - discountRatio);
+          return total + calculateTax(discountedPrice, item.product.vatRate) * item.quantity;
+        }
+      }
+    }
+    
+    // No discount applied to this item
     return total + itemVat;
   }, 0);
 });
+
 const getProvinces = () => {
   axios.get("https://turkiyeapi.herokuapp.com/api/v1/provinces")
     .then(response => {
@@ -383,7 +499,6 @@ const checkBIN = (binNumber) => {
         newCard.value.cartIssuer = response.data.issuer || 'Bilinmiyor';
         newCard.value.cardType = response.data.type || '';
         
-        // Kart tipine göre otomatik stil değişikliği için
         const firstDigit = binNumber.charAt(0);
         if (firstDigit === '4') {
           newCard.value.cardBrand = 'Visa';
@@ -404,7 +519,7 @@ const checkBIN = (binNumber) => {
 const orderDto = ref({
   addressId: null,
   cardId: null,
-  phone: null
+  phone: null,
 });
 
 const user = ref({});
@@ -419,7 +534,10 @@ const formatCardNumber = (cardNumber) => {
 const checkout = () => {
   const orderData = { ...orderDto.value };
   const selectedAddress = user.value.addresses.find(address => address.id === orderDto.value.addressId);
-  
+  if(couponStore.couponCode.id){
+    orderData.couponId = couponStore.couponCode.id;
+    orderData.couponCode = couponStore.couponCode.code;
+  }
   if (selectedAddress) {
     orderData.phone = selectedAddress.phone;
     if (!selectedAddress.id || typeof selectedAddress.id === 'string' && !selectedAddress.id.includes('-')) {
@@ -468,7 +586,6 @@ const checkout = () => {
     return;
   }
   
-  // Sipariş oluşturma işlemini başlatalım
   apiClient.post('/order', orderData)
     .then((response) => {
       Swal.fire({
@@ -479,6 +596,7 @@ const checkout = () => {
         showConfirmButton: false,
       }).then(() => {
         cartStore.clearCart();
+        couponStore.clearCouponCode();
         router.push({ path: '/' });
       });
     })
@@ -567,7 +685,6 @@ const newCard = ref({
 });
 
 const saveNewCard = () => {
-  // Eğer checkBIN ile kart tipi belirlenmemişse, ilk rakama göre tahmin et
   if (!newCard.value.cardBrand) {
     let cardBrand = 'Unknown';
     const firstDigit = newCard.value.cardNumber.charAt(0);
@@ -629,13 +746,11 @@ const saveNewCard = () => {
       });
     });
   } else {
-    // Geçici olarak ekle
     user.value.cards.push(cardData);
     orderDto.value.cardId = cardData.id;
     showCardForm.value = false;
   }
   
-  // Form alanlarını temizle
   newCard.value = {
     cardHolderName: '',
     cardNumber: '',
@@ -648,28 +763,21 @@ const saveNewCard = () => {
   };
 };
 
-// Kart numarası formatlamak için yeni fonksiyon
 const formatCardInput = (event) => {
-  // Girişten boşlukları temizleyelim ve sadece sayıları alalım
   let value = event.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
   
-  // Maksimum 16 karakter sınırı 
   if (value.length > 16) {
     value = value.slice(0, 16);
   }
   
-  // Her 4 karakterde bir boşluk ekleyelim
   const formattedValue = value.replace(/(.{4})/g, '$1 ').trim();
   
-  // Input değerini güncelleyelim
   newCard.value.cardNumber = formattedValue;
   
-  // BIN kontrolü için boşlukları temizleyip kontrol edelim
   const rawCardNumber = formattedValue.replace(/\s+/g, '');
   if (rawCardNumber.length === 6) {
     checkBIN(rawCardNumber);
   } else if (rawCardNumber.length < 6) {
-    // Eğer kullanıcı silerse ya da 6'dan az hane girerse bilgileri sıfırla
     newCard.value.cardBrand = '';
     newCard.value.cartIssuer = '';
   }
@@ -1138,5 +1246,45 @@ h3 {
     align-self: flex-end;
     margin-top: 0.5rem;
   }
+}
+
+.discount-row {
+  color: #4CAF50;
+  font-weight: 500;
+}
+
+.cart-summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.cart-summary-row:last-child {
+  border-bottom: none;
+}
+
+.cart-summary .cart-total, 
+.cart-summary .cart-vat-total,
+.cart-summary .discount-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.cart-summary .cart-grand-total strong,
+.cart-summary .cart-total strong {
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+.cart-grand-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  margin-top: 10px;
+  border-top: 2px solid #333;
+  font-size: 1.2em;
+  font-weight: bold;
 }
 </style>

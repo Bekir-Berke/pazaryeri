@@ -145,10 +145,14 @@ export class ProductController {
   @Patch(':id')
   @UseGuards(AuthGuard, PermissionsGuard)
   @Permissions(Permission.UPDATE_PRODUCT)
-  @UseInterceptors(FileInterceptor('image'))
-  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto, @Req() req: Request) {
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'product-image', maxCount: 5 },
+      { name: 'variant-image', maxCount: 5 }
+    ])
+  )
+  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto, @Req() req: Request, @UploadedFiles() files: { 'product-image'?: Express.Multer.File[], 'variant-image'?: Express.Multer.File[] }) {
     updateProductDto.storeId = req['user'].sub;
-    console.log('updateProductDto', updateProductDto);
     return this.productService.update(id, updateProductDto);
   }
 

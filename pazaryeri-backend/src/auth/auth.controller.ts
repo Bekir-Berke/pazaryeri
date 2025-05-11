@@ -189,6 +189,13 @@ export class AuthController {
   @UseGuards(AuthGuard)
   @HttpCode(200)
   getMe(@Req() req:Request) {
+    if (req['user'].isGuest) {
+      return {
+        isLoggedIn: false,
+        message: 'Kullanıcı giriş yapmamış'
+      };
+    }
+    
     const userId = req['user'].sub;
     return this.authService.getMe(userId);
   }

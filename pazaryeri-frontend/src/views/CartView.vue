@@ -14,7 +14,16 @@
         <div class="cart-item" v-for="item in cartStore.cart" :key="item.id">
           <div class="item-image">
             <!-- Varyant varsa varyant resmini, yoksa ürün resmini göster -->
-            <img :src="item.variant && item.variant.imageUrl ? item.variant.imageUrl : (item.product && item.product.imageUrl ? item.product.imageUrl : '')" alt="Ürün görseli" />
+            <img
+              :src="
+                item.variant && item.variant.imageUrl
+                  ? item.variant.imageUrl
+                  : item.product && item.product.imageUrl
+                  ? item.product.imageUrl
+                  : ''
+              "
+              alt="Ürün görseli"
+            />
           </div>
           <div class="item-details">
             <router-link
@@ -22,28 +31,49 @@
             >
               <!-- Varyant varsa varyant adını, yoksa ürün adını göster -->
               <h3 class="item-name">
-                {{ item.variant ? `${item.product.name} - ${item.variant.name}` : item.product.name }}
+                {{
+                  item.variant
+                    ? `${item.product.name} - ${item.variant.name}`
+                    : item.product.name
+                }}
               </h3>
             </router-link>
             <p class="item-seller">
               Satıcı:
-              <span class="seller-name">{{ item.product && item.product.store ? item.product.store.name : 'Bilinmeyen' }}</span>
+              <span class="seller-name">{{
+                item.product && item.product.store
+                  ? item.product.store.name
+                  : "Bilinmeyen"
+              }}</span>
             </p>
           </div>
           <div class="item-quantity">
-            <button class="quantity-btn decrease" :disabled="item.quantity == 1" @click="decreaseQuantity(item)">
+            <button
+              class="quantity-btn decrease"
+              :disabled="item.quantity == 1"
+              @click="decreaseQuantity(item)"
+            >
               <i class="bi bi-dash"></i>
             </button>
             <span class="quantity-value">{{ item.quantity }}</span>
-            <button class="quantity-btn increase" @click="increaseQuantity(item)">
+            <button
+              class="quantity-btn increase"
+              @click="increaseQuantity(item)"
+            >
               <i class="bi bi-plus"></i>
             </button>
           </div>
           <div class="item-price">
-            <p class="current-price">{{ formatPrice(item.quantity * item.price) }}</p>
+            <p class="current-price">
+              {{ formatPrice(item.quantity * item.price) }}
+            </p>
           </div>
           <div class="item-actions">
-            <button class="remove-btn" title="Sepetten Çıkar" @click="deleteFromCart(item)">
+            <button
+              class="remove-btn"
+              title="Sepetten Çıkar"
+              @click="deleteFromCart(item)"
+            >
               <i class="bi bi-trash"></i>
             </button>
             <button class="favorite-btn" title="Favorilere Ekle">
@@ -58,12 +88,25 @@
           <h2>Sipariş Özeti</h2>
           <div class="summary-row">
             <span>Ürünler Toplamı</span>
-            <span>{{formatPrice(productTotalPrice)}}</span>
+            <span>{{ formatPrice(productTotalPrice) }}</span>
+          </div>
+          <div v-if="couponStore.couponCode.type" class="summary-row discount">
+            <span>İndirim ({{ couponStore.couponCode.desc }})</span>
+            <span>{{ formatDiscountAmount() }}</span>
+          </div>
+          <div v-if="couponStore.couponCode.type" class="summary-row">
+            <div class="applied-coupon">
+              <span class="coupon-code">{{ couponStore.couponCode.code }}</span>
+              <button @click="removeCoupon" class="remove-coupon-btn">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
           </div>
           <div class="summary-row">
             <span>Kargo Ücreti</span>
-            <span class="free-shipping">{{formatPrice(shippingCost)}}</span>
+            <span class="free-shipping">{{ formatPrice(shippingCost) }}</span>
           </div>
+
           <div class="summary-row total">
             <span>Toplam</span>
             <span>{{ formatPrice(totalPrice) }}</span>
@@ -81,8 +124,12 @@
         <div class="promo-code-container">
           <h3>İndirim Kodu</h3>
           <div class="promo-code">
-            <input type="text" placeholder="İndirim kodunuz" />
-            <button>Uygula</button>
+            <input
+              type="text"
+              v-model="couponCode"
+              placeholder="İndirim kodunuz"
+            />
+            <button @click="applyCoupon()">Uygula</button>
           </div>
         </div>
       </div>
@@ -99,26 +146,134 @@
       </p>
       <router-link to="/">
         <button class="continue-shopping-btn">
-        <i class="bi bi-arrow-left"></i> Alışverişe Devam Et
-      </button>
+          <i class="bi bi-arrow-left"></i> Alışverişe Devam Et
+        </button>
       </router-link>
     </div>
   </div>
 </template>
 <script setup>
-import { useCartStore } from "@/stores/counter";
+import { useCartStore, useCouponStore } from "@/stores/counter";
 import { useRouter } from "vue-router";
 import { computed, onMounted, ref } from "vue";
 import { useToast } from "vue-toast-notification";
 import apiClient from "@/api";
 const cartStore = useCartStore();
+const couponStore = useCouponStore();
+const couponCode = ref("");
 const router = useRouter();
 const toast = useToast();
 const isLoading = ref(false);
 const cartCount = computed(() => {
-  return cartStore.cart.map(item => item.quantity).reduce((a, b) => a + b, 0);
+  return cartStore.cart.map((item) => item.quantity).reduce((a, b) => a + b, 0);
 });
+const removeCoupon = () => {
+  couponStore.setCouponCode({
+    type: null,
+    value: null,
+    desc: null,
+    code: null,
+  });
+  toast.success("Kupon kaldırıldı");
+};
+const applyCoupon = () => {
+  const requestData = { couponCode: couponCode.value };
+  
+  apiClient
+    .post("/coupon/validate", requestData)
+    .then((response) => {
+      if (response.data.valid === true) {
+        couponStore.setCouponCode({
+          id: response.data.id,
+          type: response.data.type,
+          value: response.data.value,
+          desc: response.data.desc,
+          code: couponCode.value,
+          storeId: response.data.storeId,
+          categoryIds: response.data.categoryIds,
+          productIds: response.data.productIds,
+          eligibleItemIds: response.data.eligibleItemIds
+        });
+        toast.success("Kupon başarıyla uygulandı");
+      }
+    })
+    .catch((error) => {
+      console.log(error.response?.data?.message || "Kupon uygulanamadı");
+      toast.error(error.response?.data?.message || "Geçersiz kupon kodu");
+    });
+};
+const formatDiscountAmount = () => {
+  let discountAmount = 0;
+  
+  if (!couponStore.couponCode.type) return formatPrice(0);
+  
+  const eligibleItems = getEligibleItems();
+  
+  const eligibleTotal = eligibleItems.reduce((total, item) => 
+    total + (item.quantity * item.price), 0
+  );
+  
+  if (couponStore.couponCode.type === "PERCENTAGE") {
+    discountAmount = eligibleTotal * (couponStore.couponCode.value / 100);
+  } else if (couponStore.couponCode.type === "FIXED_AMOUNT") {
+    discountAmount = Math.min(couponStore.couponCode.value, eligibleTotal);
+  }
+  
+  return formatPrice(discountAmount);
+};
 
+const getEligibleItems = () => {
+  if (!couponStore.couponCode.type) return [];
+  
+  let eligibleItems = [...cartStore.cart];
+  
+  if (couponStore.couponCode.storeId) {
+    eligibleItems = eligibleItems.filter(item => 
+      item.product && item.product.store && 
+      item.product.store.id === couponStore.couponCode.storeId
+    );
+  }
+  
+  if (couponStore.couponCode.categoryIds && couponStore.couponCode.categoryIds.length > 0) {
+    eligibleItems = eligibleItems.filter(item => {
+      if (!item.product || !item.product.categories) return false;
+      
+      const productCategoryIds = item.product.categories.map(pc => 
+        pc.category ? pc.category.id : null
+      ).filter(id => id !== null);
+      
+      return productCategoryIds.some(catId => 
+        couponStore.couponCode.categoryIds.includes(catId)
+      );
+    });
+  }
+  
+  if (couponStore.couponCode.productIds && couponStore.couponCode.productIds.length > 0) {
+    eligibleItems = eligibleItems.filter(item => 
+      couponStore.couponCode.productIds.includes(item.productId)
+    );
+  }
+  
+  return eligibleItems;
+};
+
+const discountAmount = computed(() => {
+  if (!couponStore.couponCode.type) return 0;
+  
+  const eligibleItems = getEligibleItems();
+  
+  const eligibleTotal = eligibleItems.reduce((total, item) => 
+    total + (item.quantity * item.price), 0
+  );
+  
+  if (couponStore.couponCode.type === "PERCENTAGE") {
+    return eligibleTotal * (couponStore.couponCode.value / 100);
+  } else if (couponStore.couponCode.type === "FIXED_AMOUNT") {
+    return Math.min(couponStore.couponCode.value, eligibleTotal);
+  }
+  
+  return 0;
+});
 const formatPrice = (price) => {
   return new Intl.NumberFormat("tr-TR", {
     style: "currency",
@@ -128,7 +283,7 @@ const formatPrice = (price) => {
 
 const productTotalPrice = computed(() => {
   return cartStore.cart
-    .map(item => item.quantity * item.price)
+    .map((item) => item.quantity * item.price)
     .reduce((a, b) => a + b, 0);
 });
 
@@ -137,45 +292,46 @@ const shippingCost = computed(() => {
 });
 
 const totalPrice = computed(() => {
-  return productTotalPrice.value + shippingCost.value;
+  return productTotalPrice.value + shippingCost.value - discountAmount.value;
 });
 
 const deleteFromCart = (item) => {
   try {
     const deleteData = {
-    productId: item.productId,
-    variantId: item.variant ? item.variant.id : null,
-  };
-  apiClient.delete(`/cart`, {
-    data: deleteData
-  })
-    .then(() => {
-      cartStore.removeFromCart(item);
-      toast.success("Ürün sepetten çıkarıldı");
-    })
-    .catch((error) => {
-      console.error(error);
-      toast.error("Ürün sepetten çıkarılamadı");
-    });
+      productId: item.productId,
+      variantId: item.variant ? item.variant.id : null,
+    };
+    apiClient
+      .delete(`/cart`, {
+        data: deleteData,
+      })
+      .then(() => {
+        cartStore.removeFromCart(item);
+        toast.success("Ürün sepetten çıkarıldı");
+      })
+      .catch((error) => {
+        console.error(error);
+        toast.error("Ürün sepetten çıkarılamadı");
+      });
   } catch (error) {
     console.error("Error deleting item from cart:", error);
     toast.error("Ürün sepetten çıkarılamadı");
   }
-}
+};
 
 const increaseQuantity = (item) => {
   const productDto = {
     productId: item.productId,
-    quantity: 1
+    quantity: 1,
   };
-  
+
   // Eğer varyant varsa, varyant ID'sini ekle
   if (item.variant && item.variant.id) {
     productDto.variantId = item.variant.id;
   }
-  
-  apiClient.post(`/cart`, productDto, { 
-  })
+
+  apiClient
+    .post(`/cart`, productDto, {})
     .then(() => {
       toast.success("Ürün sepetinize eklendi");
     })
@@ -189,16 +345,16 @@ const decreaseQuantity = (item) => {
   if (item.quantity > 1) {
     const productDto = {
       productId: item.productId,
-      quantity: -1
+      quantity: -1,
     };
-    
+
     // Eğer varyant varsa, varyant ID'sini ekle
     if (item.variant && item.variant.id) {
       productDto.variantId = item.variant.id;
     }
-    
-    apiClient.post(`/cart`, productDto, { 
-    })
+
+    apiClient
+      .post(`/cart`, productDto, {})
       .then(() => {
         cartStore.decreaseQuantity(item);
         toast.success("Ürün sepetinizden çıkarıldı");
@@ -212,10 +368,19 @@ const decreaseQuantity = (item) => {
 
 onMounted(() => {
   isLoading.value = true;
-  apiClient.get("/cart")
+  apiClient
+    .get("/cart")
     .then((response) => {
       if (response.data) {
         cartStore.initCart(response.data);
+      }
+      if (couponStore.couponCode) {
+        if (couponStore.couponCode.type === "PERCENTAGE") {
+          totalPrice =
+            totalPrice - totalPrice * Number(couponStore.couponCode.value);
+        } else if (couponStore.couponCode.type === "FIXED_AMOUNT") {
+          totalPrice = totalPrice - Number(couponStore.couponCode.value);
+        }
       }
     })
     .catch((error) => {
@@ -988,5 +1153,49 @@ onMounted(() => {
   .product-slider {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
+}
+
+.applied-coupon {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #e6f7ff; /* Açık mavi arka plan */
+  border: 1px solid #91d5ff; /* Mavi kenarlık */
+  padding: 0.65rem 0.9rem; /* Biraz daha fazla padding */
+  border-radius: 8px; /* Daha yuvarlak köşeler */
+  width: 100%;
+  margin-top: 0.5rem; /* Üstteki elemanla arasında biraz boşluk */
+}
+
+.coupon-code {
+  font-weight: 600; /* Biraz daha kalın yazı */
+  color: #0d47a1; /* Koyu mavi yazı rengi */
+  font-size: 0.95rem;
+}
+
+.remove-coupon-btn {
+  background: none;
+  border: none;
+  color: #d32f2f; /* Kırmızı renk */
+  cursor: pointer;
+  padding: 0.3rem;
+  font-size: 1.2rem; /* İkon boyutu */
+  line-height: 1;
+  border-radius: 50%; /* Tamamen yuvarlak */
+  width: 28px; /* Genişlik ve yükseklik eşitleme */
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.remove-coupon-btn:hover {
+  background-color: #ffebee; /* Çok açık kırmızı hover arka planı */
+  color: #b71c1c; /* Hover\'da daha koyu kırmızı */
+}
+
+.remove-coupon-btn i {
+  display: block;
 }
 </style>

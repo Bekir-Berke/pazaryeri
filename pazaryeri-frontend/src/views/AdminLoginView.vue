@@ -131,6 +131,7 @@ const handleLogin = async () => {
         showConfirmButton: false,
         timer: 1500
       }).then(() => {
+        useLoggedInStore().login();
         useLoggedInStore().setRole('ADMIN');
         router.push('/admin/dashboard');
       });

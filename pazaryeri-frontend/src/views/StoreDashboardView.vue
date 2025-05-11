@@ -16,9 +16,17 @@
           <i class="bi bi-box"></i>
           <span>Ürünler</span>
         </div>
+        <div class="menu-item" :class="{ active: pages == 'coupons' }" @click="pages = 'coupons'">
+          <i class="bi bi-tag"></i>
+          <span>Kuponlar</span>
+        </div>
         <div class="menu-item" :class="{ active: pages == 'orders' }" @click="pages = 'orders'">
           <i class="bi bi-cart"></i>
           <span>Siparişler</span>
+        </div>
+        <div class="menu-item" :class="{ active: pages == 'reviews' }" @click="pages = 'reviews'">
+          <i class="bi bi-star"></i>
+          <span>Değerlendirmeler</span>
         </div>
         <div class="menu-item">
           <i class="bi bi-graph-up"></i>
@@ -39,6 +47,8 @@
     <Dashbooard v-if="pages == 'dashboard'" v-model="storeData" />
     <StoreDashboardProductList v-if="pages == 'products'" v-model="storeData.products" />
     <StoreDashboardOrderList v-if="pages == 'orders'" v-model="storeData.orders" />
+    <StoreDashboardCouponList v-if="pages == 'coupons'" v-model="storeData.Coupon" />
+    <StoreDashboardReviewList v-if="pages == 'reviews'" v-model="storeData.reviews" />
   </div>
 </template>
 
@@ -50,6 +60,8 @@ import Swal from "sweetalert2";
 import Dashbooard from "@/components/Dashbooard.vue";
 import StoreDashboardProductList from "@/components/StoreDashboardProductList.vue";
 import StoreDashboardOrderList from "@/components/StoreDashboardOrderList.vue";
+import StoreDashboardCouponList from "@/components/StoreDashboardCouponList.vue";
+import StoreDashboardReviewList from "@/components/StoreDashboardReviewList.vue";
 import { useLoggedInStore } from "@/stores/counter";
 
 const storeData = ref(null);

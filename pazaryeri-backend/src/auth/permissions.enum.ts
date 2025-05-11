@@ -29,6 +29,10 @@ export enum Permission {
     READ_PRODUCT = 'read:product',
     UPDATE_PRODUCT = 'update:product',
     DELETE_PRODUCT = 'delete:product',
+    CREATE_COUPON = 'create:coupon',
+    READ_COUPON = 'read:coupon',
+    UPDATE_COUPON = 'update:coupon',
+    DELETE_COUPON = 'delete:coupon',
     //READ_ORDERS = 'read:orders',
     //UPDATE_ORDERS = 'update:orders',
     

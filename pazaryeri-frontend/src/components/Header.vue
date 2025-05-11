@@ -38,6 +38,53 @@
                 </li>
               </ul>
             </div>
+            <div v-else-if="loginStore.role === 'STORE'">
+              <div class="seller-link-container">
+                <router-link to="/store-page" class="btn-seller">
+                  <i class="bi bi-shop me-1"></i>Pazaryerinde Satış Yap
+                </router-link>
+              </div>
+              <ul class="user-buttons">
+                <li>
+                  <div class="dropdown">
+                    <b-dropdown id="user-dropdown" text="Mağaza Panelim" variant="warning">
+                      <b-dropdown-item to="/store/dashboard">
+                        <i class="bi bi-speedometer2 me-2"></i>Mağaza Paneli
+                      </b-dropdown-item>
+                      <b-dropdown-item to="/store/dashboard/add-product">
+                        <i class="bi bi-plus-circle me-2"></i>Ürün Ekle
+                      </b-dropdown-item>
+                      <b-dropdown-divider></b-dropdown-divider>
+                      <b-dropdown-item @click="handleStoreLogout" class="logout">
+                        <i class="bi bi-box-arrow-right me-2"></i>Çıkış Yap
+                      </b-dropdown-item>
+                    </b-dropdown>
+                  </div>
+                </li>
+              </ul>
+            </div>
+            <div v-else-if="loginStore.role === 'ADMIN'">
+              <div class="seller-link-container">
+                <router-link to="/admin/dashboard" class="btn-seller">
+                  <i class="bi bi-gear me-1"></i>Admin Panelim
+                </router-link>
+              </div>
+              <ul class="user-buttons">
+                <li>
+                  <div class="dropdown">
+                    <b-dropdown id="user-dropdown" text="Admin Panelim" variant="warning">
+                      <b-dropdown-item to="/admin/dashboard">
+                        <i class="bi bi-speedometer2 me-2"></i>Admin Paneli
+                      </b-dropdown-item>
+                      <b-dropdown-divider></b-dropdown-divider>
+                      <b-dropdown-item @click="handleAdminLogout" class="logout">
+                        <i class="bi bi-box-arrow-right me-2"></i>Çıkış Yap
+                      </b-dropdown-item>
+                    </b-dropdown>
+                  </div>
+                </li>
+              </ul>
+            </div>
             <div v-else>
               <div class="seller-link-container">
                 <router-link to="/store-application" class="btn-seller">
@@ -104,6 +151,18 @@ const performSearch = () => {
 
 const handleLogout = () => {
   apiClient.post('/auth/logout', {}).then(() => {
+    loginStore.logout();
+    loginStore.setRole(null);
+  });
+};
+const handleAdminLogout = () => {
+  apiClient.post('/auth/admin-logout', {}).then(() => {
+    loginStore.logout();
+    loginStore.setRole(null);
+  });
+};
+const handleStoreLogout = () => {
+  apiClient.post('/auth/store-logout', {}).then(() => {
     loginStore.logout();
     loginStore.setRole(null);
   });
