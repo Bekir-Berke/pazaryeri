@@ -6,6 +6,7 @@ import { UpdateStoreDto } from 'src/store/dto/update-store.dto';
 import { UpdateProductDto } from './dto/update-admin.dto';
 import { UpdateBrandDto } from 'src/brand/dto/update-brand.dto';
 import { CreateBrandDto } from 'src/brand/dto/create-brand.dto';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class AdminService {
@@ -28,6 +29,10 @@ export class AdminService {
     });
   }
   updateUser(id:string, updateUserDto: UpdateUserDto) {
+    if(updateUserDto.passwordHash){
+      const salt = bcrypt.genSaltSync(10);
+      updateUserDto.passwordHash = bcrypt.hashSync(updateUserDto.passwordHash,salt)
+    }
     return this.prisma.user.update({
       where: {
         id: id
