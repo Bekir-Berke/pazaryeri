@@ -10,6 +10,7 @@ import { PermissionsGuard } from 'src/auth/permissions.guard';
 import { UpdateStoreDto } from 'src/store/dto/update-store.dto';
 import { UpdateBrandDto } from 'src/brand/dto/update-brand.dto';
 import { SkipThrottle } from '@nestjs/throttler';
+import { CreateProductDto } from 'src/product/dto/create-product.dto';
 
 @SkipThrottle()
 @Controller('admin')
@@ -98,6 +99,12 @@ export class AdminController {
   @Permissions(Permission.READ_ALL_BRANDS)
   getAllBrands(){
     return this.adminService.getAllBrands();
+  }
+  @Post('brands')
+  @UseGuards(AuthGuard,PermissionsGuard)
+  @Permissions(Permission.CREATE_BRAND)
+  createBrand(createProductDto:CreateProductDto){
+    return this.adminService.addBrand(createProductDto)
   }
 
   @Patch('brands/:id')

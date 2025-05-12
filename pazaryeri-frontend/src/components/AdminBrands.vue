@@ -393,21 +393,8 @@ const saveBrand = async () => {
         confirmButtonText: "Tamam",
       });
     } else {
-      // Yeni marka ekleme API çağrısı
-      // const response = await fetch('/api/brands', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(brandData)
-      // });
-      // const newBrand = await response.json();
-
-      // Simülasyon
-      const newBrand = {
-        id: Date.now().toString(),
-        ...brandData,
-        productCount: 0,
-        createdAt: new Date().toISOString(),
-      };
+      const response = await apiClient.post('/admin/brands', brandData)
+      const newBrand = await response.data
       brands.value.push(newBrand);
 
       Swal.fire({
