@@ -25,8 +25,8 @@ export class AuthGuard implements CanActivate {
     const extractTokens = this.extractToken(request);
 
     if (!extractTokens) {
-      if (url === '/product' || url.startsWith('/product') || url === '/auth/me') {
-        if (url === '/auth/me') {
+      if (url === '/api/product' || url.startsWith('/api/product') || url === '/api/auth/me') {
+        if (url === '/api/auth/me') {
           request['user'] = { isGuest: true };
         }
         return true;

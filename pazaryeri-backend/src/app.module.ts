@@ -21,10 +21,17 @@ import { FavoritesModule } from './favorites/favorites.module';
 import { AdminModule } from './admin/admin.module';
 import { ReviewModule } from './review/review.module';
 import { CouponModule } from './coupon/coupon.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
-  imports: [UsersModule, AuthModule, ConfigModule.forRoot({envFilePath: '.env'}), AddressModule, StoreModule, ProductModule, CategoryModule, RedisModule, BrandModule, UploadModule, CartModule, CompanyModule, OrderModule, CardModule, InvoiceModule, PdfModule, FavoritesModule, AdminModule, ReviewModule, CouponModule],
+  imports: [UsersModule, AuthModule, ConfigModule.forRoot({envFilePath: '.env'}), AddressModule, StoreModule, ProductModule, CategoryModule, RedisModule, BrandModule, UploadModule, CartModule, CompanyModule, OrderModule, CardModule, InvoiceModule, PdfModule, FavoritesModule, AdminModule, ReviewModule, CouponModule, ThrottlerModule.forRoot({
+    throttlers:[{
+      ttl:60000,
+      limit:15
+    }]
+  })],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, {provide:APP_GUARD,useClass:ThrottlerGuard}],
 })
 export class AppModule {}

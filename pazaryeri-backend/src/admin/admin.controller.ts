@@ -9,7 +9,9 @@ import { Permission } from 'src/auth/permissions.enum';
 import { PermissionsGuard } from 'src/auth/permissions.guard';
 import { UpdateStoreDto } from 'src/store/dto/update-store.dto';
 import { UpdateBrandDto } from 'src/brand/dto/update-brand.dto';
+import { SkipThrottle } from '@nestjs/throttler';
 
+@SkipThrottle()
 @Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}

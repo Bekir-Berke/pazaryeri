@@ -33,8 +33,6 @@ services:
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
       - CORS_ORIGINS=http://localhost,http://localhost:81,http://frontend:81,https://pazaryeri.bekirberke.tr
-    volumes:
-      - ./pazaryeri-backend:/app
     ports:
       - "3000:3000"
 
