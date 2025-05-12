@@ -16,45 +16,6 @@
           </button>
         </div>
       </div>
-      <div class="col-md-6 text-end">
-        <div class="btn-group">
-          <button
-              class="btn"
-              :class="[filter === 'ALL' ? 'btn-primary' : 'btn-outline-primary']"
-              @click="setFilter('ALL')"
-          >
-            Tümü
-          </button>
-          <button
-              class="btn"
-              :class="[filter === 'PENDING' ? 'btn-primary' : 'btn-outline-primary']"
-              @click="setFilter('PENDING')"
-          >
-            Bekleyen
-          </button>
-          <button
-              class="btn"
-              :class="[filter === 'PROCESSING' ? 'btn-primary' : 'btn-outline-primary']"
-              @click="setFilter('PROCESSING')"
-          >
-            İşlemde
-          </button>
-          <button
-              class="btn"
-              :class="[filter === 'SHIPPED' ? 'btn-primary' : 'btn-outline-primary']"
-              @click="setFilter('SHIPPED')"
-          >
-            Kargoda
-          </button>
-          <button
-              class="btn"
-              :class="[filter === 'DELIVERED' ? 'btn-primary' : 'btn-outline-primary']"
-              @click="setFilter('DELIVERED')"
-          >
-            Teslim Edildi
-          </button>
-        </div>
-      </div>
     </div>
 
     <!-- Orders Table -->

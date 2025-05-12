@@ -318,9 +318,6 @@ const closeModal = () => {
     brandForm.value = {
       name: "",
     };
-    logoPreview.value = null;
-    logoFile.value = null;
-    formErrors.value = {};
   }, 300);
 };
 
@@ -392,6 +389,7 @@ const saveBrand = async () => {
         icon: "success",
         confirmButtonText: "Tamam",
       });
+      isSaving.value = false;
     } else {
       const response = await apiClient.post('/admin/brands', brandData)
       const newBrand = await response.data
@@ -403,9 +401,8 @@ const saveBrand = async () => {
         icon: "success",
         confirmButtonText: "Tamam",
       });
+      isSaving.value = false;
     }
-
-    closeModal();
   } catch (err) {
     console.error("Error saving brand:", err);
     Swal.fire({
@@ -414,9 +411,10 @@ const saveBrand = async () => {
       icon: "error",
       confirmButtonText: "Tamam",
     });
-  } finally {
     isSaving.value = false;
   }
+  
+  closeModal();
 };
 
 // Marka durumunu değiştir

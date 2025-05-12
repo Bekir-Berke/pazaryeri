@@ -66,5 +66,7 @@ export enum Permission {
     UPDATE_ANY_CATEGORY = 'update:any_category',
     DELETE_ANY_CATEGORY = 'delete:any_category',
 
+    READ_ALL_COUPONS = 'read:all_coupons',
+
     READ_SYSTEM_LOGS = 'read:system_logs',
   }

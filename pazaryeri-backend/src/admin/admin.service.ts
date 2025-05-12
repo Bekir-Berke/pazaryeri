@@ -5,7 +5,7 @@ import { PrismaService } from 'src/prisma.service';
 import { UpdateStoreDto } from 'src/store/dto/update-store.dto';
 import { UpdateProductDto } from './dto/update-admin.dto';
 import { UpdateBrandDto } from 'src/brand/dto/update-brand.dto';
-import { CreateProductDto } from 'src/product/dto/create-product.dto';
+import { CreateBrandDto } from 'src/brand/dto/create-brand.dto';
 
 @Injectable()
 export class AdminService {
@@ -233,9 +233,9 @@ export class AdminService {
       }
     })
   }
-  addBrand(createProductDto:CreateProductDto){
+  addBrand(createBrandDto:CreateBrandDto){
     return this.prisma.brand.create({
-      data:createProductDto
+      data:createBrandDto
     })
   }
   updateBrand(id:string, updateBrandDto: UpdateBrandDto){
@@ -288,5 +288,8 @@ export class AdminService {
         }
       }
     })
+  }
+  getAllCoupons(){
+    return this.prisma.coupon.findMany({})
   }
 }

@@ -56,6 +56,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
         Permission.DELETE_ANY_USER,
 
         Permission.READ_ALL_ORDERS,
+        Permission.READ_ALL_COUPONS,
 
         Permission.READ_ALL_STORES,
         Permission.READ_ANY_STORE,

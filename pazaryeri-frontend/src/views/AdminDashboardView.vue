@@ -1,7 +1,7 @@
 <template>
   <div class="admin-dashboard">
     <!-- Sidebar -->
-    <div class="sidebar" :class="{ 'open': sidebarOpen }">
+    <div class="sidebar" :class="{ open: sidebarOpen }">
       <div class="sidebar-header">
         <div class="logo-container">
           <h3>Admin Panel</h3>
@@ -13,81 +13,89 @@
 
       <div class="admin-menu">
         <div
-            class="menu-item"
-            :class="{ 'active': activeTab === 'dashboard' }"
-            @click="setActiveTab('dashboard')"
+          class="menu-item"
+          :class="{ active: activeTab === 'dashboard' }"
+          @click="setActiveTab('dashboard')"
         >
           <i class="bi bi-speedometer2"></i>
           <span>Dashboard</span>
         </div>
         <div
-            class="menu-item"
-            :class="{ 'active': activeTab === 'users' }"
-            @click="setActiveTab('users')"
+          class="menu-item"
+          :class="{ active: activeTab === 'users' }"
+          @click="setActiveTab('users')"
         >
           <i class="bi bi-people"></i>
           <span>Kullanıcılar</span>
         </div>
         <div
-            class="menu-item"
-            :class="{ 'active': activeTab === 'stores' }"
-            @click="setActiveTab('stores')"
+          class="menu-item"
+          :class="{ active: activeTab === 'stores' }"
+          @click="setActiveTab('stores')"
         >
           <i class="bi bi-shop"></i>
           <span>Mağazalar</span>
         </div>
         <div
-            class="menu-item"
-            :class="{ 'active': activeTab === 'products' }"
-            @click="setActiveTab('products')"
+          class="menu-item"
+          :class="{ active: activeTab === 'products' }"
+          @click="setActiveTab('products')"
         >
           <i class="bi bi-box-seam"></i>
           <span>Ürünler</span>
         </div>
         <div
-            class="menu-item"
-            :class="{ 'active': activeTab === 'orders' }"
-            @click="setActiveTab('orders')"
+          class="menu-item"
+          :class="{ active: activeTab === 'orders' }"
+          @click="setActiveTab('orders')"
         >
           <i class="bi bi-cart3"></i>
           <span>Siparişler</span>
         </div>
         <div
-            class="menu-item"
-            :class="{'active': activeTab === 'invoices' }"
-            @click="setActiveTab('invoices')"
+          class="menu-item"
+          :class="{ active: activeTab === 'invoices' }"
+          @click="setActiveTab('invoices')"
         >
           <i class="bi bi-file-earmark-text"></i>
           <span>Faturalar</span>
         </div>
         <div
-            class="menu-item"
-            :class="{ 'active': activeTab === 'categories' }"
-            @click="setActiveTab('categories')"
+          class="menu-item"
+          :class="{ active: activeTab === 'categories' }"
+          @click="setActiveTab('categories')"
         >
           <i class="bi bi-grid"></i>
           <span>Kategoriler</span>
         </div>
         <div
           class="menu-item"
-          :class="{ 'active': activeTab === 'brands' }"
+          :class="{ active: activeTab === 'brands' }"
           @click="setActiveTab('brands')"
-      >
-        <i class="bi bi-grid"></i>
-        <span>Markalar</span>
-      </div>
+        >
+          <i class="bi bi-grid"></i>
+          <span>Markalar</span>
+        </div>
         <div
-            class="menu-item"
-            :class="{ 'active': activeTab === 'applications' }"
-            @click="setActiveTab('applications')"
+          class="menu-item"
+          :class="{ active: activeTab === 'coupons' }"
+          @click="setActiveTab('coupons')"
+        >
+          <i class="bi bi-grid"></i>
+          <span>Kuponlar</span>
+        </div>
+        <div
+          class="menu-item"
+          :class="{ active: activeTab === 'applications' }"
+          @click="setActiveTab('applications')"
         >
           <i class="bi bi-clipboard-check"></i>
           <span>Mağaza Başvuruları</span>
         </div>
         <div
-            class="menu-item"
-            :class="{ 'active': activeTab === 'settings' }"
-            @click="setActiveTab('settings')"
+          class="menu-item"
+          :class="{ active: activeTab === 'settings' }"
+          @click="setActiveTab('settings')"
         >
           <i class="bi bi-gear"></i>
           <span>Ayarlar</span>
@@ -106,14 +114,20 @@
       <div class="top-bar">
         <div class="left-section">
           <div class="toggle-sidebar" @click="toggleSidebar">
-            <i class="bi" :class="sidebarOpen ? 'bi-arrow-left' : 'bi-list'"></i>
+            <i
+              class="bi"
+              :class="sidebarOpen ? 'bi-arrow-left' : 'bi-list'"
+            ></i>
           </div>
           <div class="page-title">{{ getPageTitle() }}</div>
         </div>
         <div class="right-section">
           <div class="profile-dropdown" ref="profileDropdown">
             <div class="profile-trigger" @click="toggleProfileDropdown">
-              <img src="https://ui-avatars.com/api/?name=A+D&background=4a6da7&color=fff" alt="Admin" />
+              <img
+                src="https://ui-avatars.com/api/?name=A+D&background=4a6da7&color=fff"
+                alt="Admin"
+              />
               <span>Admin User</span>
               <i class="bi bi-chevron-down"></i>
             </div>
@@ -149,6 +163,7 @@
           <AdminStoreApplications v-else-if="activeTab === 'applications'" />
           <AdminSettings v-else-if="activeTab === 'settings'" />
           <AdminBrands v-else-if="activeTab === 'brands'" />
+          <AdminCoupons v-else-if="activeTab === 'coupons'" />
         </transition>
       </div>
     </div>
@@ -156,38 +171,50 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import Swal from 'sweetalert2';
-import apiClient from '@/api';
-import AdminUsers from '@/components/AdminUsers.vue';
-import AdminStores from '@/components/AdminStores.vue';
+import { ref, onMounted, onUnmounted, computed } from "vue";
+import { useRouter } from "vue-router";
+import Swal from "sweetalert2";
+import apiClient from "@/api";
+import AdminUsers from "@/components/AdminUsers.vue";
+import AdminStores from "@/components/AdminStores.vue";
 import AdminCategories from "@/components/AdminCategories.vue";
-import AdminProducts from '@/components/AdminProducts.vue';
-import AdminOrders from '@/components/AdminOrders.vue';
+import AdminProducts from "@/components/AdminProducts.vue";
+import AdminOrders from "@/components/AdminOrders.vue";
 import AdminStoreApplications from "@/components/AdminStoreApplications.vue";
-import AdminBrands from '@/components/AdminBrands.vue';
-import AdminInvoices from '@/components/AdminInvoices.vue';
-import { useLoggedInStore } from '@/stores/counter';
+import AdminBrands from "@/components/AdminBrands.vue";
+import AdminInvoices from "@/components/AdminInvoices.vue";
+import AdminCoupons from "@/components/AdminCoupons.vue";
+import { useLoggedInStore } from "@/stores/counter";
 
 const router = useRouter();
 const sidebarOpen = ref(window.innerWidth >= 992);
-const activeTab = ref('dashboard');
+const activeTab = ref("dashboard");
 const showProfileMenu = ref(false);
 const profileDropdown = ref(null);
 
 // Get current page title based on active tab
 const getPageTitle = () => {
   switch (activeTab.value) {
-    case 'dashboard': return 'Dashboard';
-    case 'users': return 'Kullanıcı Yönetimi';
-    case 'stores': return 'Mağaza Yönetimi';
-    case 'products': return 'Ürün Yönetimi';
-    case 'orders': return 'Sipariş Yönetimi';
-    case 'categories': return 'Kategori Yönetimi';
-    case 'applications': return 'Mağaza Başvuruları';
-    case 'settings': return 'Sistem Ayarları';
-    default: return 'Admin Panel';
+    case "dashboard":
+      return "Dashboard";
+    case "users":
+      return "Kullanıcı Yönetimi";
+    case "stores":
+      return "Mağaza Yönetimi";
+    case "products":
+      return "Ürün Yönetimi";
+    case "orders":
+      return "Sipariş Yönetimi";
+    case "categories":
+      return "Kategori Yönetimi";
+    case "applications":
+      return "Mağaza Başvuruları";
+    case "settings":
+      return "Sistem Ayarları";
+    case "coupons":
+      return "Kupon Yönetimi"
+    default:
+      return "Admin Panel";
   }
 };
 
@@ -222,49 +249,49 @@ const handleResize = () => {
 
 const logout = () => {
   Swal.fire({
-    title: 'Çıkış yapmak istediğinizden emin misiniz?',
-    icon: 'question',
+    title: "Çıkış yapmak istediğinizden emin misiniz?",
+    icon: "question",
     showCancelButton: true,
-    confirmButtonColor: '#3085d6',
-    cancelButtonColor: '#d33',
-    confirmButtonText: 'Evet, çıkış yap',
-    cancelButtonText: 'İptal'
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "Evet, çıkış yap",
+    cancelButtonText: "İptal",
   }).then((result) => {
     if (result.isConfirmed) {
       apiClient
-          .post('/auth/admin-logout')
-          .then(() => {
-            useLoggedInStore().setRole(null);
-            useLoggedInStore().logout();
-            Swal.fire({
-              icon: 'success',
-              title: 'Başarıyla çıkış yaptınız.',
-              showConfirmButton: false,
-              timer: 1500,
-            }).then(() => {
-              router.push('/admin/login');
-            });
-          })
-          .catch((error) => {
-            console.error('Logout error:', error);
-            Swal.fire({
-              icon: 'error',
-              title: 'Çıkış yapılırken bir hata oluştu.',
-              text: 'Lütfen tekrar deneyin.'
-            });
+        .post("/auth/admin-logout")
+        .then(() => {
+          useLoggedInStore().setRole(null);
+          useLoggedInStore().logout();
+          Swal.fire({
+            icon: "success",
+            title: "Başarıyla çıkış yaptınız.",
+            showConfirmButton: false,
+            timer: 1500,
+          }).then(() => {
+            router.push("/admin/login");
           });
+        })
+        .catch((error) => {
+          console.error("Logout error:", error);
+          Swal.fire({
+            icon: "error",
+            title: "Çıkış yapılırken bir hata oluştu.",
+            text: "Lütfen tekrar deneyin.",
+          });
+        });
     }
   });
 };
 
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
-  window.addEventListener('resize', handleResize);
+  document.addEventListener("click", handleClickOutside);
+  window.addEventListener("resize", handleResize);
 });
 
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
-  window.removeEventListener('resize', handleResize);
+  document.removeEventListener("click", handleClickOutside);
+  window.removeEventListener("resize", handleResize);
 });
 </script>
 
@@ -273,7 +300,7 @@ onUnmounted(() => {
   display: flex;
   min-height: 100vh;
   background-color: #f8f9fc;
-  font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+  font-family: "Inter", "Segoe UI", Roboto, sans-serif;
 }
 
 /* Sidebar Styles */
@@ -410,7 +437,8 @@ onUnmounted(() => {
   height: 64px;
 }
 
-.left-section, .right-section {
+.left-section,
+.right-section {
   display: flex;
   align-items: center;
   gap: 20px;
