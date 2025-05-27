@@ -202,12 +202,48 @@
                 </div>
               </div>
 
+              <!-- Coupon Information -->
+              <div v-if="selectedOrder.Coupon" class="card mb-3">
+                <div class="card-header bg-light">
+                  <h6 class="mb-0">Kullanılan Kupon</h6>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <p class="mb-1"><strong>Kupon Kodu:</strong> {{ selectedOrder.Coupon.code }}</p>
+                      <p class="mb-1"><strong>Açıklama:</strong> {{ selectedOrder.Coupon.description }}</p>
+                      <p class="mb-1"><strong>İndirim Türü:</strong> 
+                        <span v-if="selectedOrder.Coupon.type === 'PERCENTAGE'">Yüzde</span>
+                        <span v-else-if="selectedOrder.Coupon.type === 'FIXED'">Sabit Tutar</span>
+                        <span v-else>{{ selectedOrder.Coupon.type }}</span>
+                      </p>
+                    </div>
+                    <div class="col-md-6">
+                      <p class="mb-1"><strong>İndirim Değeri:</strong> 
+                        <span v-if="selectedOrder.Coupon.type === 'PERCENTAGE'">%{{ selectedOrder.Coupon.value }}</span>
+                        <span v-else>{{ formatPrice(selectedOrder.Coupon.value) }} TL</span>
+                      </p>
+                      <p class="mb-1" v-if="selectedOrder.Coupon.minOrderAmount">
+                        <strong>Min. Sipariş Tutarı:</strong> {{ formatPrice(selectedOrder.Coupon.minOrderAmount) }} TL
+                      </p>
+                      <p class="mb-1" v-if="selectedOrder.Coupon.maxDiscount">
+                        <strong>Max. İndirim:</strong> {{ formatPrice(selectedOrder.Coupon.maxDiscount) }} TL
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <!-- Order Summary -->
               <div class="card">
                 <div class="card-body">
                   <div class="d-flex justify-content-between mb-2">
                     <span>Ara Toplam:</span>
                     <span>{{ formatPrice(selectedOrder.subtotalAmount) }} TL</span>
+                  </div>
+                  <div v-if="selectedOrder.Coupon && selectedOrder.discountAmount" class="d-flex justify-content-between mb-2 text-success">
+                    <span>Kupon İndirimi ({{ selectedOrder.Coupon.code }}):</span>
+                    <span>-{{ formatPrice(selectedOrder.discountAmount) }} TL</span>
                   </div>
                   <div class="d-flex justify-content-between mb-2">
                     <span>KDV:</span>

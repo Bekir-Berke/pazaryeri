@@ -13,13 +13,33 @@ export class BrandService {
   }
 
   findAll() {
-    return this.prisma.brand.findMany()
+    return this.prisma.brand.findMany({
+      where:{
+        deletedAt:null
+      }
+    })
   }
 
   findOne(id: string) {
     return this.prisma.brand.findUnique({
       where:{
-        id: id}
+        id: id,
+        deletedAt:null
+      },
+      include:{
+        products:{
+          where:{
+            deletedAt:null,
+            isActive:true
+          },
+          select:{
+            id:true,
+            name:true,
+            vatPrice:true,
+            imageUrl:true
+          }
+        }
+      }
     })
   }
 

@@ -28,9 +28,9 @@
           <i class="bi bi-star"></i>
           <span>Değerlendirmeler</span>
         </div>
-        <div class="menu-item">
-          <i class="bi bi-graph-up"></i>
-          <span>Performans</span>
+        <div class="menu-item" :class="{ active: pages == 'invoices' }" @click="pages = 'invoices'">
+          <i class="bi bi-file-earmark-text"></i>
+          <span>Faturalar</span>
         </div>
         <div class="menu-item">
           <i class="bi bi-gear"></i>
@@ -49,6 +49,7 @@
     <StoreDashboardOrderList v-if="pages == 'orders'" v-model="storeData.orders" />
     <StoreDashboardCouponList v-if="pages == 'coupons'" v-model="storeData.Coupon" />
     <StoreDashboardReviewList v-if="pages == 'reviews'" v-model="storeData.reviews" />
+    <StoreDashboardInvoiceList v-if="pages == 'invoices'" v-model="storeData.invoices" />
   </div>
 </template>
 
@@ -62,6 +63,7 @@ import StoreDashboardProductList from "@/components/StoreDashboardProductList.vu
 import StoreDashboardOrderList from "@/components/StoreDashboardOrderList.vue";
 import StoreDashboardCouponList from "@/components/StoreDashboardCouponList.vue";
 import StoreDashboardReviewList from "@/components/StoreDashboardReviewList.vue";
+import StoreDashboardInvoiceList from "@/components/StoreDashboardInvoiceList.vue";
 import { useLoggedInStore } from "@/stores/counter";
 
 const storeData = ref(null);

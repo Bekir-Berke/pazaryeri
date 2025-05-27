@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Put } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
-import { UpdateAdminDto, updateStoreApplicationDto, UpdateUserDto } from './dto/update-admin.dto';
+import { UpdateAdminDto, UpdateProductDto, updateStoreApplicationDto, UpdateUserDto } from './dto/update-admin.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { UseGuards } from '@nestjs/common/decorators';
 import { Permissions } from 'src/auth/permissions.decorator';
@@ -71,6 +71,18 @@ export class AdminController {
   @Permissions(Permission.READ_ALL_STORES)
   getAllProducts(){
     return this.adminService.getAllProducts();
+  }
+  @Delete('products/:id')
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @Permissions(Permission.UPDATE_ANY_STORE)
+  removeProduct(@Param('id') id: string) {
+    return this.adminService.removeProduct(id);
+  }
+  @Put('products/:id')
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @Permissions(Permission.UPDATE_ANY_STORE)
+  updateProduct(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
+    return this.adminService.updateProduct(id, updateProductDto);
   }
 
   @Get('orders')

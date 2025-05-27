@@ -92,7 +92,7 @@
           </div>
           <div v-if="couponStore.couponCode.type" class="summary-row discount">
             <span>İndirim ({{ couponStore.couponCode.desc }})</span>
-            <span>{{ formatDiscountAmount() }}</span>
+            <span>-{{ formatDiscountAmount() }}</span>
           </div>
           <div v-if="couponStore.couponCode.type" class="summary-row">
             <div class="applied-coupon">

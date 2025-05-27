@@ -109,7 +109,7 @@
               <div class="brand-info" v-if="product.brand">
                 <span>Marka: </span>
                 <router-link
-                  :to="`/brands/${product.brand.id}`"
+                  :to="`/brand/${product.brand.id}/products`"
                   class="brand-name"
                 >
                   <i class="bi bi-shop"></i> {{ product.brand.name }}

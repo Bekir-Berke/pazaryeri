@@ -58,16 +58,21 @@ export class CategoryService {
 
   async findOne(id: string) {
     let result:any = await this.prisma.category.findUnique({
-      where: { id },
+      where: { id , deletedAt:null},
       include:{
         children:{
+          where:{
+            deletedAt:null
+          },
           include:{
             children:{
               where:{
-                level:2
+                level:2,
+                deletedAt:null
               },
               include:{
                 products:{
+                  where:{product:{deletedAt:null}},
                   include:{
                     product:true
                   }
@@ -75,6 +80,7 @@ export class CategoryService {
               }
             },
             products: {
+              where:{product:{deletedAt:null}},
               include: {
                 product: true
               }

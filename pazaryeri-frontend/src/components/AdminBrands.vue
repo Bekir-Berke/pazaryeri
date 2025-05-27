@@ -366,7 +366,6 @@ const saveBrand = async () => {
   isSaving.value = true;
 
   try {
-
     const brandData = {
       ...brandForm.value,
     };
@@ -383,38 +382,38 @@ const saveBrand = async () => {
         };
       }
 
-      Swal.fire({
+      await Swal.fire({
         title: "Başarılı",
         text: "Marka bilgileri güncellendi",
         icon: "success",
         confirmButtonText: "Tamam",
       });
-      isSaving.value = false;
     } else {
       const response = await apiClient.post('/admin/brands', brandData)
-      const newBrand = await response.data
+      const newBrand = response.data
       brands.value.push(newBrand);
 
-      Swal.fire({
+      await Swal.fire({
         title: "Başarılı",
         text: "Yeni marka eklendi",
         icon: "success",
         confirmButtonText: "Tamam",
       });
-      isSaving.value = false;
     }
+    isSaving.value = false;
+    closeModal();
   } catch (err) {
     console.error("Error saving brand:", err);
-    Swal.fire({
+    
+    await Swal.fire({
       title: "Hata",
       text: "Marka kaydedilirken bir hata oluştu",
       icon: "error",
       confirmButtonText: "Tamam",
     });
+    
     isSaving.value = false;
   }
-  
-  closeModal();
 };
 
 // Marka durumunu değiştir

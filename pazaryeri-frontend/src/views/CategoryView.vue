@@ -123,14 +123,15 @@
                                             </router-link>
                                         </div>
                                         <div class="product-price">
-                                            <span v-if="product.originalPrice && product.originalPrice > product.price"
-                                                class="original-price">
-                                                {{ formatPrice(product.originalPrice) }}
+                                            <span class="original-price">
+                                                {{ formatPrice(product.vatPrice) }}
                                             </span>
-                                            {{ formatPrice(product.price) }}
                                         </div>
                                         <div class="product-actions">
-                                            <button class="btn addToCart w-100" @click="addToCart(product)">
+                                            <button v-if="loggedInStore.loggedIn" class="btn addToCart w-100" @click="addToCart(product)">
+                                                Sepete Ekle
+                                            </button>
+                                            <button v-else class="btn addToCart w-100" @click="router.push('/login')">
                                                 Sepete Ekle
                                             </button>
                                         </div>
@@ -148,12 +149,15 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useToast } from "vue-toast-notification";
 import apiClient from '@/api';
-
+import { useLoggedInStore } from '@/stores/counter';
 const route = useRoute();
 const router = useRouter();
 const id = route.params.id;
 const loading = ref(true);
+const loggedInStore = useLoggedInStore();
+const $toast = useToast();
 const products = ref([]);
 const categoryName = ref('');
 const sortOption = ref('default');
@@ -291,7 +295,7 @@ watch(
 
 // Resim yükleme hatası durumu
 const handleImageError = (event) => {
-    event.target.src = "/placeholder-image.jpg";
+    event.target.src = "";
 };
 
 // Fiyat formatı
@@ -325,8 +329,19 @@ const viewProductDetails = (product) => {
 
 // Sepete ekle
 const addToCart = (product) => {
-    // Sepet ekleme mantığı burada olacak
-    console.log('Sepete eklenen ürün:', product);
+  const productDto = {
+    productId: product.id,
+    quantity: 1,
+  };
+  apiClient
+    .post("/cart", productDto)
+    .then((response) => {
+      $toast.success(`${product.name} sepete eklendi`, { duration: 1000 });
+    })
+    .catch((error) => {
+      console.error(error);
+      $toast.error("Sepete eklenirken bir hata oluştu.", { duration: 1000 });
+    });
 };
 
 // Alt kategorileri göster
@@ -586,11 +601,9 @@ const displayedSubCategories = computed(() => {
 }
 
 .original-price {
-    text-decoration: line-through;
-    color: #999;
-    font-size: 0.8rem;
-    font-weight: normal;
-    margin-right: 0.3rem;
+  color: #333;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 .product-actions {

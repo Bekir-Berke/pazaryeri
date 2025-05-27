@@ -294,26 +294,49 @@
                   <small class="text-muted">Boş bırakılırsa, kişi başı sınırsız kullanılabilir.</small>
                 </div>
 
-                <!-- Kategoriler -->
+                <!-- Hedefleme Tipi -->
                 <div class="col-md-12">
+                  <label class="form-label">Kupon Hedefleme Tipi</label>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" id="targetingTypeAll" v-model="newCoupon.targetingType" value="all">
+                    <label class="form-check-label" for="targetingTypeAll">
+                      Tüm Ürünler
+                    </label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" id="targetingTypeCategory" v-model="newCoupon.targetingType" value="category">
+                    <label class="form-check-label" for="targetingTypeCategory">
+                      Kategori Bazlı
+                    </label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" id="targetingTypeBrand" v-model="newCoupon.targetingType" value="brand">
+                    <label class="form-check-label" for="targetingTypeBrand">
+                      Marka Bazlı
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Kategoriler - Sadece kategori bazlı seçildiğinde görünür -->
+                <div class="col-md-12" v-if="newCoupon.targetingType === 'category'">
                   <label for="categories" class="form-label">Kategoriler</label>
                   <select class="form-select" id="categories" v-model="newCoupon.categoryIds" multiple>
                     <option v-for="category in categories" :key="category.id" :value="category.id">
                       {{ getCategoryFullPath(category) }}
                     </option>
                   </select>
-                  <small class="text-muted">Kuponu belirli kategorilerdeki ürünlere uygulamak için seçin. Boş bırakılırsa tüm kategorilere uygulanır.</small>
+                  <small class="text-muted">Kuponu belirli kategorilerdeki ürünlere uygulamak için seçin.</small>
                 </div>
 
-                <!-- Markalar -->
-                <div class="col-md-12">
+                <!-- Markalar - Sadece marka bazlı seçildiğinde görünür -->
+                <div class="col-md-12" v-if="newCoupon.targetingType === 'brand'">
                   <label for="brands" class="form-label">Markalar</label>
                   <select class="form-select" id="brands" v-model="newCoupon.brandIds" multiple>
                     <option v-for="brand in brands" :key="brand.id" :value="brand.id">
                       {{ brand.name }}
                     </option>
                   </select>
-                  <small class="text-muted">Kuponu belirli markalardaki ürünlere uygulamak için seçin. Boş bırakılırsa tüm markalara uygulanır.</small>
+                  <small class="text-muted">Kuponu belirli markalardaki ürünlere uygulamak için seçin.</small>
                 </div>
 
                 <!-- Açıklama -->
@@ -370,7 +393,8 @@ const newCoupon = ref({
   description: '',
   isActive: true,
   categoryIds: [], // Kategori IDleri için dizi
-  brandIds: [] // Marka IDleri için dizi
+  brandIds: [], // Marka IDleri için dizi
+  targetingType: 'all' // Varsayılan olarak tüm ürünlere uygula
 });
 
 const isSaving = ref(false);
@@ -518,7 +542,8 @@ const resetNewCoupon = () => {
     description: '',
     isActive: true,
     categoryIds: [], // Kategori IDleri sıfırla
-    brandIds: [] // Marka IDleri sıfırla
+    brandIds: [], // Marka IDleri sıfırla
+    targetingType: 'all'
   };
 };
 
@@ -556,16 +581,31 @@ const saveCoupon = async () => {
       couponData.endDate = endDate.toISOString();
     }
     
-    // Marka IDleri, Kupon-Ürün ilişkisine dönüştür
-    if (couponData.brandIds && couponData.brandIds.length > 0) {
-      // Seçilen markalara ait ürünleri bul ve bunların ID'lerini ekle
-      // API'nin beklediği productIds dizisine dönüştür
-      const productIds = await getProductsForBrands(couponData.brandIds);
-      couponData.productIds = productIds;
+    // Targeting type kontrolü
+    if (couponData.targetingType === 'all') {
+      // Tüm ürünlere uygulanacak, categoryIds ve brandIds boş olmalı
+      couponData.categoryIds = [];
+      couponData.brandIds = [];
+    } else if (couponData.targetingType === 'brand') {
+      // Sadece marka bazlı, categoryIds boş olmalı
+      couponData.categoryIds = [];
+      
+      // Marka IDleri, Kupon-Ürün ilişkisine dönüştür
+      if (couponData.brandIds && couponData.brandIds.length > 0) {
+        // Seçilen markalara ait ürünleri bul ve bunların ID'lerini ekle
+        const productIds = await getProductsForBrands(couponData.brandIds);
+        couponData.productIds = productIds;
+      }
+    } else if (couponData.targetingType === 'category') {
+      // Sadece kategori bazlı, brandIds boş olmalı
+      couponData.brandIds = [];
     }
     
     // brandIds alanını kaldır çünkü backend bu alanı beklemiyor
     delete couponData.brandIds;
+    
+    // targetingType alanını da kaldır çünkü backend bu alanı beklemiyor
+    delete couponData.targetingType;
     
     console.log('Gönderilen veri:', JSON.stringify(couponData, null, 2));
     
@@ -635,6 +675,15 @@ const editCoupon = (coupon) => {
   const startDate = new Date(coupon.startDate);
   const endDate = new Date(coupon.endDate);
   
+  // Hedefleme tipini belirle
+  let targetingType = 'all';
+  
+  if (coupon.categories && coupon.categories.length > 0) {
+    targetingType = 'category';
+  } else if (coupon.brands && coupon.brands.length > 0) {
+    targetingType = 'brand';
+  }
+  
   // Kupon verisini form nesnesine kopyala
   newCoupon.value = {
     id: coupon.id,
@@ -650,7 +699,8 @@ const editCoupon = (coupon) => {
     description: coupon.description || '',
     isActive: coupon.isActive,
     categoryIds: coupon.categories ? coupon.categories.map(c => c.categoryId) : [],
-    brandIds: coupon.brands ? coupon.brands.map(b => b.brandId) : []
+    brandIds: coupon.brands ? coupon.brands.map(b => b.brandId) : [],
+    targetingType: targetingType
   };
   
   // Düzenleme modunu aç

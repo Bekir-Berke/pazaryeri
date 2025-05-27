@@ -1,113 +1,147 @@
 <template>
-    <div class="product-list-container">
-      <div class="container">
-        <!-- Ürün listesi -->
-        <div class="products-container grid">
-          <div v-if="isLoading" class="loading-container">
-            <div class="spinner-border text-primary" role="status">
-              <span class="visually-hidden">Yükleniyor...</span>
-            </div>
-            <p>Ürünler yükleniyor...</p>
+  <div class="product-list-container">
+    <div class="container">
+      <!-- Ürün listesi -->
+      <div class="products-container grid">
+        <div v-if="isLoading" class="loading-container">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Yükleniyor...</span>
           </div>
-          
-          <div v-else-if="products.length === 0" class="no-products">
-            <i class="bi bi-basket"></i>
-            <p>Ürün bulunamadı.</p>
-          </div>
-          
-          <template v-else>
-            <!-- Grid görünümü -->
-            <div v-for="product in products" :key="product.id" class="product-card">
-              <div class="product-badges">
-                <span v-if="product.isNew" class="badge new-badge">Yeni</span>
-                <span v-if="product.discountRate" class="badge discount-badge">%{{ product.discountRate }}</span>
-              </div>
-              
-              <div class="product-image">
-                <router-link :to="`/product/${product.id}`">
-                  <img :src="product.imageUrl" :alt="product.name" @error="handleImageError">
-                </router-link>
-              </div>
-              
-              <div class="product-info">
-                <h3 class="product-title">
-                  <router-link :to="`/product/${product.id}`">{{ product.name }}</router-link>
-                </h3>
-                
-                <div class="product-price">
-                  <span v-if="product.discountRate" class="old-price">{{ formatPrice(product.oldPrice) }}</span>
-                  <span class="current-price">{{ formatPrice(product.vatPrice) }}</span>
-                </div>
-                
-                <button v-if="loggedInStore.loggedIn" class="add-to-cart-btn" @click="addToCart(product)">
-                  <i class="bi bi-cart-plus"></i>
-                </button>
-                <button v-else class="add-to-cart-btn" @click="router.push('/login')">
-                  <i class="bi bi-cart-plus"></i>
-                </button>
-              </div>
-            </div>
-          </template>
+          <p>Ürünler yükleniyor...</p>
         </div>
+
+        <div v-else-if="products.length === 0" class="no-products">
+          <i class="bi bi-basket"></i>
+          <p>Ürün bulunamadı.</p>
+        </div>
+
+        <template v-else>
+          <!-- Grid görünümü -->
+          <div
+            v-for="product in products"
+            :key="product.id"
+            class="product-card"
+          >
+            <div class="product-badges">
+              <span v-if="product.isNew" class="badge new-badge">Yeni</span>
+              <span v-if="product.discountRate" class="badge discount-badge"
+                >%{{ product.discountRate }}</span
+              >
+            </div>
+
+            <div class="product-image">
+              <router-link :to="`/product/${product.id}`">
+                <img
+                  :src="product.imageUrl"
+                  :alt="product.name"
+                  @error="handleImageError"
+                />
+              </router-link>
+            </div>
+
+            <div class="product-info">
+              <h3 class="product-title">
+                <router-link :to="`/product/${product.id}`">{{
+                  product.name
+                }}</router-link>
+              </h3>
+
+              <div class="product-price">
+                <span v-if="product.discountRate" class="old-price">{{
+                  formatPrice(product.oldPrice)
+                }}</span>
+                <span class="current-price">{{
+                  formatPrice(product.vatPrice)
+                }}</span>
+              </div>
+
+              <button
+                v-if="loggedInStore.loggedIn"
+                class="add-to-cart-btn"
+                @click="addToCart(product)"
+              >
+                <i class="bi bi-cart-plus"></i>
+              </button>
+              <button
+                v-else
+                class="add-to-cart-btn"
+                @click="router.push('/login')"
+              >
+                <i class="bi bi-cart-plus"></i>
+              </button>
+            </div>
+          </div>
+        </template>
       </div>
     </div>
-  </template>
+  </div>
+</template>
   
   <script setup>
-  import { useProductStore, useCartStore, useLoggedInStore } from '@/stores/counter';
-  import { useToast } from 'vue-toast-notification';
-  import { ref, computed, onMounted } from 'vue';
-  import { useRoute } from 'vue-router';
-  import apiClient from '@/api';
-  import router from '@/router';
-  
-  const route = useRoute();
-  const $toast = useToast();
-  const isLoading = ref(true);
-  const currentPage = ref(1);
-  const viewType = ref('grid');
-  const itemsPerPage = ref(20);
-  const totalItems = ref(0);
-  const productStore = useProductStore();
-  const cartStore = useCartStore();
-  const loggedInStore = useLoggedInStore();
-  const products = computed(() => productStore.products);
-  
-  const totalPages = computed(() => {
-    return Math.ceil(totalItems.value / itemsPerPage.value);
-  });
-  
-  const changePage = (page) => {
-    if (page < 1 || page > totalPages.value) return;
-    currentPage.value = page;
+import {
+  useProductStore,
+  useCartStore,
+  useLoggedInStore,
+} from "@/stores/counter";
+import { useToast } from "vue-toast-notification";
+import { ref, computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
+import apiClient from "@/api";
+import router from "@/router";
+
+const route = useRoute();
+const $toast = useToast();
+const isLoading = ref(true);
+const currentPage = ref(1);
+const viewType = ref("grid");
+const itemsPerPage = ref(20);
+const totalItems = ref(0);
+const productStore = useProductStore();
+const cartStore = useCartStore();
+const loggedInStore = useLoggedInStore();
+const products = computed(() => productStore.products);
+
+const totalPages = computed(() => {
+  return Math.ceil(totalItems.value / itemsPerPage.value);
+});
+
+const changePage = (page) => {
+  if (page < 1 || page > totalPages.value) return;
+  currentPage.value = page;
+};
+
+const formatPrice = (price) => {
+  return new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: "TRY",
+  }).format(price);
+};
+
+const addToCart = (product) => {
+  const productDto = {
+    productId: product.id,
+    quantity: 1,
   };
-  
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(price);
-  };
-  
-  const addToCart = (product) => {
-    const productDto = {
-      productId: product.id,
-      quantity: 1
-    };
-    apiClient.post('/cart',productDto).then((response) => {
-        $toast.success(`${product.name} sepete eklendi`, { duration: 1000 });
-    }).catch((error) => {
+  apiClient
+    .post("/cart", productDto)
+    .then((response) => {
+      $toast.success(`${product.name} sepete eklendi`, { duration: 1000 });
+    })
+    .catch((error) => {
       console.error(error);
-      $toast.error('Sepete eklenirken bir hata oluştu.', { duration: 1000 });
+      $toast.error("Sepete eklenirken bir hata oluştu.", { duration: 1000 });
     });
-  };
-  
-  const handleImageError = (event) => {
-    event.target.src = '';
-  };
-  
-  onMounted(() => {
-    productStore.fetchProducts();
-    isLoading.value = false;
-  });
-  </script>
+};
+
+const handleImageError = (event) => {
+  event.target.src = "";
+};
+
+onMounted(() => {
+  productStore.fetchProducts();
+  isLoading.value = false;
+});
+</script>
   
   <style scoped>
 .product-list-container {
@@ -261,7 +295,8 @@
 }
 
 /* Yükleniyor ve "Ürün yok" durumları */
-.loading-container, .no-products {
+.loading-container,
+.no-products {
   grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
@@ -308,11 +343,11 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 6px;
   }
-  
+
   .product-title {
     font-size: 0.7rem;
   }
-  
+
   .product-info {
     padding: 6px 6px 26px 6px;
   }

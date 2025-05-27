@@ -19,6 +19,7 @@ import AdminLoginView from "@/views/AdminLoginView.vue";
 import AdminDashboardView from "@/views/AdminDashboardView.vue";
 import ForbiddenView from "@/views/ForbiddenView.vue";
 import SearchView from '@/views/SearchView.vue'
+import BrandsView from '../views/BrandsView.vue'
 import { useLoggedInStore } from '@/stores/counter';
 const routes = [
     {
@@ -161,6 +162,16 @@ const routes = [
       title: 'Pazaryerinde Satış Yap'
     },
    },
+    {
+      path: '/brands',
+      name: 'brands',
+      component: () => import('../views/BrandsView.vue')
+    },
+    {
+      path: '/brand/:id/products',
+      name: 'brand-products',
+      component: () => import('../views/BrandProductsView.vue')
+    },
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',

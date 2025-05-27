@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { PrismaService } from 'src/prisma.service';
@@ -16,7 +16,7 @@ export class StoreService {
   }
 
   async findOne(id: string) {
-    const store =  await this.prisma.store.findUnique(
+    const store =  await this.prisma.store.findFirst(
       {
         where: { id },
         select: {
@@ -71,6 +71,28 @@ export class StoreService {
               usageLimit:true,
               usedCount:true
             }
+          },
+          invoices:{
+            select:{
+              id:true,
+              invoiceNumber:true,
+              orderId:true,
+              amount:true,
+              taxAmount:true,
+              paidAt:true,
+              issuedAt:true,
+              items:{
+                select:{
+                  id:true,
+                  description:true,
+                  quantity:true,
+                  unitPrice:true,
+                  totalPrice:true,
+                  taxAmount:true,
+                  vatRate:true,
+                }
+              }
+            }
           }
         }
       }
@@ -88,9 +110,15 @@ export class StoreService {
     return this.prisma.store.findUnique({ where: { email } });
   }
   
-  findStoreProfile(id: string) {
-    return this.prisma.store.findUnique({
-      where: {id},
+  async findStoreProfile(id: string) {
+    const store = await this.prisma.store.findFirst({
+      where: {
+        AND:[
+          {id},
+          {deletedAt:null},
+          {status:'APPROVED'}
+        ]
+      },
       select:{
         id: true,
         address: true,
@@ -110,6 +138,10 @@ export class StoreService {
         }
       }
     })
+    if(!store){
+      throw new NotFoundException('Store not found');
+    }
+    return store;
   }
 
   update(id: string, updateStoreDto: UpdateStoreDto) {

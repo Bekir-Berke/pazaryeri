@@ -217,7 +217,7 @@ export class CouponService {
       },
     });
     if (createCouponDto.categoryIds) {
-       this.prisma.couponCategory.createMany({
+      await this.prisma.couponCategory.createMany({
         data: createCouponDto.categoryIds.map((id) => ({
           couponId: coupon.id,
           categoryId: id,
@@ -225,7 +225,7 @@ export class CouponService {
       });
     }
     if (createCouponDto.productIds) {
-        this.prisma.couponProduct.createMany({
+      await this.prisma.couponProduct.createMany({
         data: createCouponDto.productIds.map((id) => ({
           couponId: coupon.id,
           productId: id,

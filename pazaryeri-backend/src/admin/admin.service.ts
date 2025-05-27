@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto, updateStoreApplicationDto, UpdateUserDto } from './dto/update-admin.dto';
 import { PrismaService } from 'src/prisma.service';
@@ -181,7 +181,19 @@ export class AdminService {
       }
     })
   }
-  updateProduct(id:string, updateProductDto: UpdateProductDto) {
+  async updateProduct(id:string, updateProductDto: UpdateProductDto) {
+    const product = await this.prisma.product.findUnique({
+      where: { id }
+    });
+    if(!product){
+      throw new BadRequestException('Product not found');
+    }
+  }
+  removeProduct(id:string) {
+    return this.prisma.product.update({
+      where: { id },
+      data: { deletedAt: new Date() }
+    });
   }
   getAllOrders(){
     return this.prisma.order.findMany({
@@ -210,6 +222,14 @@ export class AdminService {
         user:true,
         address: true,
         invoices: true,
+        Coupon:{
+          select:{
+            code:true,
+            type:true,
+            value:true,
+            description:true,
+          }
+        },
         items:{
           include:{
             product:true,
@@ -240,7 +260,14 @@ export class AdminService {
   }
   addBrand(createBrandDto:CreateBrandDto){
     return this.prisma.brand.create({
-      data:createBrandDto
+      data:createBrandDto,
+      include:{
+        _count:{
+          select:{
+            products:true
+          }
+        }
+      }
     })
   }
   updateBrand(id:string, updateBrandDto: UpdateBrandDto){
@@ -295,6 +322,10 @@ export class AdminService {
     })
   }
   getAllCoupons(){
-    return this.prisma.coupon.findMany({})
+    return this.prisma.coupon.findMany({
+      where:{
+        deletedAt:null,
+      }
+    })
   }
 }
